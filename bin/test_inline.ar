@@ -1,0 +1,43 @@
+module InlineTest;
+
+import "test_inc.ar";
+
+Clock.start();
+
+var counter = 0;
+/*
+class MyClass(name, id) {
+  func getId(self) {
+    return self.id;
+  }
+  
+  func getName(self) {
+    return self.name;
+  }
+}*/
+
+var x1 = 3;
+alias x2 = x1;
+print 'x2 = ', x2, '\n';
+
+using Console.writeln;
+writeln("hello");
+
+//using FileIO.open;
+//var blah = open("blah.txt", "w+");
+//FileIO.close(blah);
+
+attribute{"inline"} func testInlined(x) {
+  var counter: 1;
+  while counter <= x {
+    print counter, '  ';
+    if counter % 10 == 0 {
+      print '\n';
+    }
+    counter += 1;
+  }
+}
+testInlined(150);
+print('testInlined() took ', Clock.stop(), 's\n\n');
+
+//Debug.assert(false);
