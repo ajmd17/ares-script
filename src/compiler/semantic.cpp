@@ -147,6 +147,9 @@ void SemanticAnalyzer::Accept(AstNode *node) {
   case ast_type_class_declaration:
     Accept(static_cast<AstClass*>(node));
     break;
+  case ast_type_object_expression:
+    Accept(static_cast<AstObjectExpression*>(node));
+    break;
   case ast_type_enum:
     Accept(static_cast<AstEnum*>(node));
     break;
@@ -204,7 +207,7 @@ void SemanticAnalyzer::Accept(AstImport *node) {
       auto tokens = l.ScanTokens();
 
       Parser p(tokens, l.state);
-      auto unit = p.parse();
+      auto unit = p.Parse();
 
       bool already_imported = false;
       for (auto &&it : state_ptr->other_modules) {
@@ -272,11 +275,11 @@ void SemanticAnalyzer::Accept(AstBinaryOp *node) {
 
   switch (node->op) {
     // FALLTHROUGH
-  case opr_assignment:
-  case opr_add_assign:
-  case opr_subtract_assign:
-  case opr_multiply_assign:
-  case opr_divide_assign:
+  case BinOp_assign:
+  case BinOp_add_assign:
+  case BinOp_subtract_assign:
+  case BinOp_multiply_assign:
+  case BinOp_divide_assign:
     if (left->type == ast_type_variable) {
       auto *casted = static_cast<AstVariable*>(left.get());
       if (casted->is_const) {
@@ -317,10 +320,13 @@ void SemanticAnalyzer::Accept(AstMemberAccess *node) {
     // set the right node's module to be the one we found
     node->right->module = found_module;
     Accept(node->right.get());
-  }
-  /// \todo variable member access
-  else {
-    ErrorMsg(ErrorType::msg_undeclared_identifier, node->location, node->left_str);
+  } else {
+    Accept(node->left.get());
+    if (node->right->type == ast_type_member_access) {
+      Accept(node->right.get());
+    } else if (node->right->type != ast_type_variable && node->right->type != ast_type_function_call) {
+      ErrorMsg(msg_internal_error, node->location);
+    }
   }
 }
 
@@ -508,7 +514,7 @@ void SemanticAnalyzer::Accept(AstFunctionDefinition *node) {
         }
       }
 
-      IncreaseBlock(LevelType::LEVEL_FUNCTION);
+      IncreaseBlock(LevelType::Level_function);
 
       // declare a variable for all parameters
       for (auto &&param : node->arguments) {
@@ -585,7 +591,7 @@ void SemanticAnalyzer::Accept(AstFunctionExpression *node) {
       }
     }
 
-    IncreaseBlock(LevelType::LEVEL_FUNCTION);
+    IncreaseBlock(LevelType::Level_function);
 
     // declare a variable for all parameters
     for (auto &&param : node->arguments) {
@@ -616,7 +622,6 @@ void SemanticAnalyzer::Accept(AstFunctionCall *node) {
 
     for (int i = node->arguments.size() - 1; i >= 0; i--) {
       // Push each argument onto the stack
-
       Accept(node->arguments[i].get());
     }
   } else {
@@ -625,6 +630,12 @@ void SemanticAnalyzer::Accept(AstFunctionCall *node) {
 }
 
 void SemanticAnalyzer::Accept(AstClass *node) {
+}
+
+void SemanticAnalyzer::Accept(AstObjectExpression *node) {
+  for (auto &&mem : node->members) {
+    Accept(mem.second.get());
+  }
 }
 
 void SemanticAnalyzer::Accept(AstEnum *node) {
@@ -660,12 +671,12 @@ void SemanticAnalyzer::Accept(AstEnum *node) {
 void SemanticAnalyzer::Accept(AstIfStmt *node) {
   Accept(node->conditional.get());
 
-  IncreaseBlock(LevelType::LEVEL_CONDITIONAL);
+  IncreaseBlock(LevelType::Level_condition);
   Accept(node->block.get());
   DecreaseBlock();
 
   if (node->else_statement) {
-    IncreaseBlock(LevelType::LEVEL_CONDITIONAL);
+    IncreaseBlock(LevelType::Level_condition);
     Accept(node->else_statement.get());
     DecreaseBlock();
   }
@@ -681,14 +692,22 @@ void SemanticAnalyzer::Accept(AstReturnStmt *node) {
   // The resulting value will get pushed onto the stack
   Accept(node->value.get());
 
-  int startLevel = state_ptr->level;
-  LevelInfo *level = &state_ptr->levels[startLevel];
-  while (startLevel >= compiler_global_level && level->type != LevelType::LEVEL_FUNCTION) {
-    level = &state_ptr->levels[--startLevel];
+  int start = state_ptr->level;
+  LevelInfo *level = &state_ptr->levels[start];
+  while (start >= compiler_global_level && level->type != LevelType::Level_function) {
+    level = &state_ptr->levels[--start];
   }
 }
 
 void SemanticAnalyzer::Accept(AstForLoop *node) {
+    /*std::string var_name = state_ptr->MakeVariableName(node->identifier, node->module);
+
+    // create the index variable
+    Symbol info;
+    info.node = nullptr;
+    info.original_name = node->identifier;
+    state_ptr->current_level().locals.push_back({ var_name, info });*/
+
   if (node->block != nullptr) {
     auto *block = dynamic_cast<AstBlock*>(node->block.get());
     if (block != nullptr && block->children.empty()) {
@@ -699,7 +718,7 @@ void SemanticAnalyzer::Accept(AstForLoop *node) {
   Accept(node->initializer.get());
   Accept(node->conditional.get());
 
-  IncreaseBlock(LevelType::LEVEL_LOOP);
+  IncreaseBlock(LevelType::Level_loop);
   Accept(node->block.get());
   DecreaseBlock();
 
@@ -716,7 +735,7 @@ void SemanticAnalyzer::Accept(AstWhileLoop *node) {
     }
   }
 
-  IncreaseBlock(LevelType::LEVEL_LOOP);
+  IncreaseBlock(LevelType::Level_loop);
   Accept(node->block.get());
   DecreaseBlock();
 }
@@ -729,7 +748,7 @@ void SemanticAnalyzer::Accept(AstTryCatch *node) {
     }
   }
 
-  IncreaseBlock(LevelType::LEVEL_DEFAULT);
+  IncreaseBlock(LevelType::Level_default);
   Accept(node->try_block.get());
   DecreaseBlock();
 
@@ -740,10 +759,13 @@ void SemanticAnalyzer::Accept(AstTryCatch *node) {
     }
   }
 
-  IncreaseBlock(LevelType::LEVEL_DEFAULT);
+  IncreaseBlock(LevelType::Level_default);
   Accept(node->exception_object.get());
   Accept(node->catch_block.get());
   DecreaseBlock();
+}
+
+void SemanticAnalyzer::Accept(AstRange *node) {
 }
 
 void SemanticAnalyzer::IncrementUseCount(AstNode *ptr) {

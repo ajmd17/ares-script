@@ -32,8 +32,8 @@ void VMState::HandleException(const Exception &except) {
   frames[frame_level]->exception_occured = true;
   if (!can_handle_exceptions) {
     std::cout << "Unhandled exception: " << except.message << "\n";
-    std::cout << "Heap dump:\n";
-    heap.DumpHeap();
+    //std::cout << "Heap dump:\n";
+    //heap.DumpHeap();
     std::cin.get();
     std::abort();
   }

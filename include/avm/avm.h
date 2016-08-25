@@ -23,32 +23,6 @@ namespace avm {
 typedef Variable &(Variable::*BinOp_t)(VMState *, Variable *);
 typedef Variable &(Variable::*UnOp_t)(VMState *);
 
-enum avm_operation {
-  op_add,
-  op_sub,
-  op_mul,
-  op_pow,
-  op_div,
-  op_mod,
-  op_bitxor,
-  op_bitand,
-  op_bitor,
-  op_logand,
-  op_logor,
-  op_eql,
-  op_not_eql,
-  op_less,
-  op_greater,
-  op_less_eql,
-  op_greater_eql,
-  op_lognot,
-  op_u_minus,
-  op_pre_inc,
-  op_pre_dec,
-  op_post_inc,
-  op_post_dec
-};
-
 class VMInstance {
 public:
   VMInstance();
@@ -91,30 +65,40 @@ public:
   void SuggestGC();
 
   // Handle instructions
-  void HandleInstruction(Opcode_t opcode);
+  void HandleInstruction(OpCode_t opcode);
   // Execute instructions in the stream until the end is reached
   void Execute(ByteStream *);
 
   VMState *state;
 
   /** Bind a function with no arguments, and a return type */
-  template <typename ReturnType>
+  /*template <typename ReturnType>
   void BindFunction(const AVMString_t &name, ReturnType(*ptr) (void)) {
     Reference ref(*state->heap.AllocObject<NativeFunc_NoArgs<ReturnType>>(ptr));
     state->frames[state->frame_level]->locals.push_back({ name, ref });
-  }
+  }*/
 
   /** Bind a function with 1 argument, and a return type */
-  template <typename ReturnType, typename T1>
+  /*template <typename ReturnType, typename T1>
   void BindFunction(const AVMString_t &name, ReturnType(*ptr) (T1)) {
     Reference ref(*state->heap.AllocObject<NativeFunc_OneArg<ReturnType, T1>>(ptr));
     state->frames[state->frame_level]->locals.push_back({ name, ref });
-  }
+  }*/
 
   /** Bind a function with 2 arguments, and a return type */
-  template <typename ReturnType, typename T1, typename T2>
+  /*template <typename ReturnType, typename T1, typename T2>
   void BindFunction(const AVMString_t &name, ReturnType(*ptr) (T1, T2)) {
     Reference ref(*state->heap.AllocObject<NativeFunc_TwoArgs<ReturnType, T1, T2>>(ptr));
+    state->frames[state->frame_level]->locals.push_back({ name, ref });
+  }*/
+
+  void BindFunction(const AVMString_t &name, void(*ptr) (VMState*)) {
+    Reference ref(*state->heap.AllocObject<NativeFunc_NoArgs>(ptr));
+    state->frames[state->frame_level]->locals.push_back({ name, ref });
+  }
+
+  void BindFunction(const AVMString_t &name, void(*ptr) (VMState*, Object*)) {
+    Reference ref(*state->heap.AllocObject<NativeFunc_OneArg>(ptr));
     state->frames[state->frame_level]->locals.push_back({ name, ref });
   }
 
@@ -122,8 +106,6 @@ private:
   // GC Mark all objects
   void MarkObjects();
 
-  // Call a natively binded function
-  bool CallNativeFunction(const AVMString_t &name, size_t);
   // Create an instance of a natively binded class type
   bool NewNativeObject(const AVMString_t &name);
 };

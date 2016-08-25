@@ -46,7 +46,7 @@ public:
   }
 
   virtual void invoke(VMState *, uint32_t);
-  virtual Reference clone(Heap &heap);
+  virtual Reference Clone(VMState *state);
 
   /** Arithmetic operations */
   Variable &Add(VMState *state, Variable *other);

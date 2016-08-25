@@ -25,11 +25,11 @@ public:
   virtual ~Object() = default;
 
   virtual void invoke(VMState *state, uint32_t nargs) = 0;
-  virtual Reference clone(Heap &heap) = 0;
+  virtual Reference Clone(VMState *state) = 0;
 
-  void AddFieldReference(const AVMString_t &name, Reference ref);
-  Reference GetFieldReference(const AVMString_t &name);
-  Reference GetFieldReference(size_t index);
+  bool AddFieldReference(VMState *state, const AVMString_t &name, Reference ref);
+  bool GetFieldReference(VMState *state, const AVMString_t &name, Reference &out);
+  bool GetFieldReference(VMState *state, size_t index, Reference &out);
 
   void Mark();
 

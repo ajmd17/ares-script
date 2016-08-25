@@ -8,19 +8,19 @@
 namespace avm {
 class VMState;
 
-class ArrayList : public Object {
+class Array : public Object {
 public:
-  ArrayList();
+  Array();
 
   void invoke(VMState *, uint32_t);
 
-  virtual Reference clone(Heap &heap);
+  virtual Reference Clone(VMState *state);
 
   std::string ToString() const;
   std::string TypeString() const;
 };
 
-typedef std::shared_ptr<ArrayList> arraylist_ptr;
+typedef std::shared_ptr<Array> arraylist_ptr;
 } // namespace avm
 
 #endif

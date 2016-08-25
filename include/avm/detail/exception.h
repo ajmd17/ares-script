@@ -49,6 +49,12 @@ struct TypeException : public Exception {
   }
 };
 
+struct ConversionException : public Exception {
+  ConversionException(const std::string &type_from, const std::string &type_to)
+    : Exception("cannot convert from '" + type_from + "' to '" + type_to + "'") {
+  }
+};
+
 struct InvalidArgsException : public Exception {
   InvalidArgsException(int expected, int provided)
     : Exception("invalid number of arguments, expected " +
@@ -59,6 +65,12 @@ struct InvalidArgsException : public Exception {
 struct BadInvokeException : public Exception {
   BadInvokeException(const std::string &typestr)
     : Exception("cannot invoke object, not a function type. Type: '" + typestr + "'") {
+  }
+};
+
+struct MemberNotFoundException : public Exception {
+  MemberNotFoundException(const std::string &name)
+    : Exception("member '" + name + "' not found") {
   }
 };
 } // namespace avm

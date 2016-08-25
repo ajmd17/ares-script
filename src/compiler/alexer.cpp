@@ -19,7 +19,7 @@ std::vector<Token> Lexer::ScanTokens() {
 
   while (PeekChar() != '\0') {
     Token tok = NextToken();
-    if (tok.type != TokenType::tk_unknown) {
+    if (tok.type != TokenType::Token_unknown) {
       tokens.push_back(tok);
     }
 
@@ -34,44 +34,50 @@ Token Lexer::NextToken() {
   SourceLocation loc = state.location;
 
   char ch = PeekChar();
+  char next_char = PeekChar(1);
   if (ch == '\'' || ch == '"') {
     return ReadStringLiteral();
+  } else if (isdigit(ch) && (next_char == 'x' || next_char == 'X')) {
+    return ReadHexNumberLiteral();
   } else if (isdigit(ch)) {
     return ReadNumberLiteral();
+  } else if (ch == '.' && isdigit(next_char)) {
+    // read float like .5
+    return ReadFloatLiteral();
   } else if (ch == '_' || IsAlpha(ch)) {
     return ReadIdentifier();
   } else if (ch == '+' || ch == '-' || ch == '*' || ch == '/' || ch == '%' ||
     ch == '=' || ch == '!' || ch == '<' || ch == '>' ||
     ch == '&' || ch == '|' || ch == '^' ||
-    ch == '?' || ch == '.') {
+    ch == '?' || ch == '.' || ch == '#') {
     return ReadOperator();
   } else if (ch == '{') {
     ReadChar();
-    return { TokenType::tk_open_brace, "{", loc };
+    return { TokenType::Token_open_brace, "{", loc };
   } else if (ch == '}') {
     ReadChar();
-    return { TokenType::tk_close_brace, "}", loc };
+    return { TokenType::Token_close_brace, "}", loc };
   } else if (ch == '[') {
     ReadChar();
-    return { TokenType::tk_open_bracket, "[", loc };
+    return { TokenType::Token_open_bracket, "[", loc };
   } else if (ch == ']') {
     ReadChar();
-    return { TokenType::tk_close_bracket, "]", loc };
+    return { TokenType::Token_close_bracket, "]", loc };
   } else if (ch == '(') {
     ReadChar();
-    return { TokenType::tk_open_parenthesis, "(", loc };
+    return { TokenType::Token_open_parenthesis, "(", loc };
   } else if (ch == ')') {
     ReadChar();
-    return { TokenType::tk_close_parenthesis, ")", loc };
+    return { TokenType::Token_close_parenthesis, ")", loc };
   } else if (ch == ';') {
     ReadChar();
-    return { TokenType::tk_semicolon, ";", loc };
+    return { TokenType::Token_semicolon, ";", loc };
   } else if (ch == ':') {
     ReadChar();
-    return { TokenType::tk_colon, ":", loc };
+    return { TokenType::Token_colon, ":", loc };
   } else if (ch == ',') {
     ReadChar();
-    return { TokenType::tk_comma, ",", loc };
+    return { TokenType::Token_comma, ",", loc };
   } else {
     ErrorMsg(ErrorType::msg_unexpected_token, loc, ReadChar());
     return {};
@@ -84,18 +90,40 @@ Token Lexer::ReadNumberLiteral() {
 
   char ch = PeekChar();
   do {
-    if (ch == '.')
-      return ReadFloatLiteral(str);
+    if (ch == '.') {
+      return ReadFloatLiteral();
+    }
 
     str += ReadChar();
     ch = PeekChar();
   } while (isdigit(ch) || ch == '.');
 
-  return { TokenType::tk_integer, str, loc };
+  return { TokenType::Token_integer, str, loc };
 }
 
-Token Lexer::ReadFloatLiteral(std::string &str) {
+Token Lexer::ReadHexNumberLiteral() {
   SourceLocation loc = state.location;
+  std::string str;
+
+  str += ReadChar(); // read 0
+  str += ReadChar(); // read x
+
+  char ch = PeekChar();
+  do {
+    str += ReadChar();
+    ch = PeekChar();
+  } while (isxdigit(ch));
+
+  long value = std::stol(str, 0, 16);
+  std::stringstream ss;
+  ss << value;
+
+  return { TokenType::Token_integer, ss.str(), loc };
+}
+
+Token Lexer::ReadFloatLiteral() {
+  SourceLocation loc = state.location;
+  std::string str;
   ReadChar();
   str += ".";
 
@@ -105,7 +133,7 @@ Token Lexer::ReadFloatLiteral(std::string &str) {
     ch = PeekChar();
   } while (isdigit(ch));
 
-  return { TokenType::tk_float, str, loc };
+  return { TokenType::Token_float, str, loc };
 }
 
 Token Lexer::ReadStringLiteral() {
@@ -135,7 +163,7 @@ Token Lexer::ReadStringLiteral() {
       ErrorMsg(ErrorType::msg_unterminated_string_literal, loc);
     }
 
-    return { TokenType::tk_string, str, loc };
+    return { TokenType::Token_string, str, loc };
   }
 }
 
@@ -164,7 +192,7 @@ Token Lexer::ReadMultistringLiteral() {
     ErrorMsg(ErrorType::msg_unterminated_string_literal, loc);
   }
 
-  return { TokenType::tk_string, str, loc };
+  return { TokenType::Token_string, str, loc };
 }
 
 bool Lexer::IsAlpha(char ch) const {
@@ -182,11 +210,11 @@ Token Lexer::ReadIdentifier() {
     ch = PeekChar();
   } while ((isdigit(ch) || IsAlpha(ch)) || ch == '_');
 
-  st_keyword kw = keyword_fromstr(str);
-  if (kw == st_keyword::kw_invalid) {
-    return { TokenType::tk_identifier, str, loc };
+  Keyword kw = Keyword_FromString(str);
+  if (kw == Keyword::Keyword_invalid) {
+    return { TokenType::Token_identifier, str, loc };
   } else {
-    return { TokenType::tk_keyword, str, loc };
+    return { TokenType::Token_keyword, str, loc };
   }
 }
 
@@ -206,37 +234,41 @@ Token Lexer::ReadOperator() {
   if (next_three == "...") {
     ReadChar();
     ReadChar();
-    return { TokenType::tk_ellipsis, next_three, loc };
+    return { TokenType::Token_ellipsis, next_three, loc };
   }
 
   if (next_two == "->") {
     ReadChar();
-    return { TokenType::tk_right_arrow, next_two, loc };
+    return { TokenType::Token_right_arrow, next_two, loc };
   } else if (next_two == "<-") {
     ReadChar();
-    return { TokenType::tk_left_arrow, next_two, loc };
+    return { TokenType::Token_left_arrow, next_two, loc };
   }
 
-  if (is_operator(next_two)) {
+  if (IsOperator(next_two)) {
     ReadChar();
-    return { TokenType::tk_operator, next_two, loc };
+    return { TokenType::Token_operator, next_two, loc };
   } else if (next_two == "/*") {
     ReadChar();
     ReadBlockComment();
-    return { TokenType::tk_unknown, next_two, loc };
-  } else if (next_two == "//") {
+    return { TokenType::Token_unknown, next_two, loc };
+  }/* else if (next_two == "//") {
     ReadChar();
     ReadLineComment();
-    return { TokenType::tk_unknown, next_two, loc };
-  }
+    return { TokenType::Token_unknown, next_two, loc };
+  }*/
 
   std::string str;
   str += ch;
   switch (ch) {
   case '.':
-    return { TokenType::tk_period, str, loc };
+    return { TokenType::Token_period, str, loc };
+  case '#':
+    ReadChar();
+    ReadLineComment();
+    return { TokenType::Token_unknown, str, loc };
   default:
-    return { TokenType::tk_operator, str, loc };
+    return { TokenType::Token_operator, str, loc };
   }
 }
 

@@ -38,6 +38,7 @@ protected:
   virtual void Accept(AstFunctionExpression *node) = 0;
   virtual void Accept(AstFunctionCall *node) = 0;
   virtual void Accept(AstClass *node) = 0;
+  virtual void Accept(AstObjectExpression *node) = 0;
   virtual void Accept(AstEnum *node) = 0;
   virtual void Accept(AstIfStmt *node) = 0;
   virtual void Accept(AstPrintStmt *node) = 0;
@@ -45,6 +46,7 @@ protected:
   virtual void Accept(AstForLoop *node) = 0;
   virtual void Accept(AstWhileLoop *node) = 0;
   virtual void Accept(AstTryCatch *node) = 0;
+  virtual void Accept(AstRange *node) = 0;
 
   virtual std::unique_ptr<AstNode> optimize(std::unique_ptr<AstNode> node) {
     if (!node) {
@@ -104,6 +106,8 @@ protected:
       return optimize(std::move(std::unique_ptr<AstFunctionCall>(static_cast<AstFunctionCall*>(node.release()))));
     case ast_type_class_declaration:
       return optimize(std::move(std::unique_ptr<AstClass>(static_cast<AstClass*>(node.release()))));
+    case ast_type_object_expression:
+      return optimize(std::move(std::unique_ptr<AstObjectExpression>(static_cast<AstObjectExpression*>(node.release()))));
     case ast_type_print:
       return optimize(std::move(std::unique_ptr<AstPrintStmt>(static_cast<AstPrintStmt*>(node.release()))));
     case ast_type_return:
@@ -116,6 +120,8 @@ protected:
       return optimize(std::move(std::unique_ptr<AstWhileLoop>(static_cast<AstWhileLoop*>(node.release()))));
     case ast_type_try_catch:
       return optimize(std::move(std::unique_ptr<AstTryCatch>(static_cast<AstTryCatch*>(node.release()))));
+    case ast_type_range:
+      return optimize(std::move(std::unique_ptr<AstRange>(static_cast<AstRange*>(node.release()))));
     default:
       return nullptr;
     }
@@ -173,6 +179,7 @@ protected:
   virtual std::unique_ptr<AstNode> optimize(std::unique_ptr<AstFunctionExpression> node) { return std::move(node); }
   virtual std::unique_ptr<AstNode> optimize(std::unique_ptr<AstFunctionCall> node) { return std::move(node); }
   virtual std::unique_ptr<AstNode> optimize(std::unique_ptr<AstClass> node) { return std::move(node); }
+  virtual std::unique_ptr<AstNode> optimize(std::unique_ptr<AstObjectExpression> node) { return std::move(node); }
   virtual std::unique_ptr<AstNode> optimize(std::unique_ptr<AstEnum> node) { return std::move(node); }
   virtual std::unique_ptr<AstNode> optimize(std::unique_ptr<AstIfStmt> node) { return std::move(node); }
   virtual std::unique_ptr<AstNode> optimize(std::unique_ptr<AstPrintStmt> node) { return std::move(node); }
@@ -180,54 +187,55 @@ protected:
   virtual std::unique_ptr<AstNode> optimize(std::unique_ptr<AstForLoop> node) { return std::move(node); }
   virtual std::unique_ptr<AstNode> optimize(std::unique_ptr<AstWhileLoop> node) { return std::move(node); }
   virtual std::unique_ptr<AstNode> optimize(std::unique_ptr<AstTryCatch> node) { return std::move(node); }
+  virtual std::unique_ptr<AstNode> optimize(std::unique_ptr<AstRange> node) { return std::move(node); }
 
 private:
   template <typename ReturnTypeAst, typename T1, typename T2>
-  std::unique_ptr<AstNode> optimize_bin_op(AstNode *a, AstNode *b, st_binary_operator op) {
+  std::unique_ptr<AstNode> optimize_bin_op(AstNode *a, AstNode *b, BinaryOp op) {
     typedef decltype(ReturnTypeAst::value) ReturnValueType;
 
     T1 *left = dynamic_cast<T1*>(a);
     T2 *right = dynamic_cast<T2*>(b);
 
     switch (op) {
-    case opr_power:
+    case BinOp_power:
       return std::move(std::unique_ptr<ReturnTypeAst>(new ReturnTypeAst(a->location, a->module, pow(static_cast<ReturnValueType>(left->value), static_cast<ReturnValueType>(right->value)))));
-    case opr_multiply:
+    case BinOp_multiply:
       return std::move(std::unique_ptr<ReturnTypeAst>(new ReturnTypeAst(a->location, a->module, static_cast<ReturnValueType>(left->value) * static_cast<ReturnValueType>(right->value))));
-    case opr_floor_divide:
-    case opr_divide:
+    case BinOp_floor_divide:
+    case BinOp_divide:
       return std::move(std::unique_ptr<ReturnTypeAst>(new ReturnTypeAst(a->location, a->module, static_cast<ReturnValueType>(left->value) / static_cast<ReturnValueType>(right->value))));
-    case opr_modulus:
+    case BinOp_modulus:
       return std::move(std::unique_ptr<AstInteger>(new AstInteger(a->location, a->module, static_cast<AVMInteger_t>(left->value) % static_cast<AVMInteger_t>(right->value))));
-    case opr_add:
+    case BinOp_add:
       return std::move(std::unique_ptr<ReturnTypeAst>(new ReturnTypeAst(a->location, a->module, static_cast<ReturnValueType>(left->value) + static_cast<ReturnValueType>(right->value))));
-    case opr_subtract:
+    case BinOp_subtract:
       return std::move(std::unique_ptr<ReturnTypeAst>(new ReturnTypeAst(a->location, a->module, static_cast<ReturnValueType>(left->value) - static_cast<ReturnValueType>(right->value))));
-    case opr_logand:
+    case BinOp_logand:
       return std::move(std::unique_ptr<AstInteger>(new AstInteger(a->location, a->module, static_cast<ReturnValueType>(left->value) && static_cast<ReturnValueType>(right->value))));
-    case opr_logor:
+    case BinOp_logor:
       return std::move(std::unique_ptr<AstInteger>(new AstInteger(a->location, a->module, static_cast<ReturnValueType>(left->value) || static_cast<ReturnValueType>(right->value))));
-    case opr_equals:
+    case BinOp_equals:
       return std::move(std::unique_ptr<AstInteger>(new AstInteger(a->location, a->module, static_cast<ReturnValueType>(left->value) == static_cast<ReturnValueType>(right->value))));
-    case opr_nequal:
+    case BinOp_not_equal:
       return std::move(std::unique_ptr<AstInteger>(new AstInteger(a->location, a->module, static_cast<ReturnValueType>(left->value) != static_cast<ReturnValueType>(right->value))));
-    case opr_less:
+    case BinOp_less:
       return std::move(std::unique_ptr<AstInteger>(new AstInteger(a->location, a->module, static_cast<ReturnValueType>(left->value) < static_cast<ReturnValueType>(right->value))));
-    case opr_greater:
+    case BinOp_greater:
       return std::move(std::unique_ptr<AstInteger>(new AstInteger(a->location, a->module, static_cast<ReturnValueType>(left->value) > static_cast<ReturnValueType>(right->value))));
-    case opr_less_eql:
+    case BinOp_less_eql:
       return std::move(std::unique_ptr<AstInteger>(new AstInteger(a->location, a->module, static_cast<ReturnValueType>(left->value) <= static_cast<ReturnValueType>(right->value))));
-    case opr_greater_eql:
+    case BinOp_greater_eql:
       return std::move(std::unique_ptr<AstInteger>(new AstInteger(a->location, a->module, static_cast<ReturnValueType>(left->value) >= static_cast<ReturnValueType>(right->value))));
-    case opr_bitand:
+    case BinOp_bitand:
       return std::move(std::unique_ptr<AstInteger>(new AstInteger(a->location, a->module, static_cast<AVMInteger_t>(left->value) & static_cast<AVMInteger_t>(right->value))));
-    case opr_bitor:
+    case BinOp_bitor:
       return std::move(std::unique_ptr<AstInteger>(new AstInteger(a->location, a->module, static_cast<AVMInteger_t>(left->value) | static_cast<AVMInteger_t>(right->value))));
-    case opr_bitxor:
+    case BinOp_bitxor:
       return std::move(std::unique_ptr<AstInteger>(new AstInteger(a->location, a->module, static_cast<AVMInteger_t>(left->value) ^ static_cast<AVMInteger_t>(right->value))));
-    case opr_bitshift_left:
+    case BinOp_bitshift_left:
       return std::move(std::unique_ptr<AstInteger>(new AstInteger(a->location, a->module, static_cast<AVMInteger_t>(left->value) << static_cast<AVMInteger_t>(right->value))));
-    case opr_bitshift_right:
+    case BinOp_bitshift_right:
       return std::move(std::unique_ptr<AstInteger>(new AstInteger(a->location, a->module, static_cast<AVMInteger_t>(left->value) >> static_cast<AVMInteger_t>(right->value))));
     default:
       return nullptr;
@@ -235,18 +243,18 @@ private:
   }
 
   template <typename ReturnTypeAst, typename T1>
-  std::unique_ptr<AstNode> optimize_un_op(AstNode *a, st_unary_operator op) {
+  std::unique_ptr<AstNode> optimize_un_op(AstNode *a, UnaryOp op) {
     typedef decltype(ReturnTypeAst::value) ReturnValueType;
 
     T1 *left = dynamic_cast<T1*>(a);
     switch (op) {
-    case opr_lognot:
+    case UnOp_lognot:
       return std::move(std::unique_ptr<ReturnTypeAst>(new ReturnTypeAst(a->location, a->module, !static_cast<ReturnValueType>(left->value))));
-    case opr_bitcompl:
+    case UnOp_bitcompl:
       return std::move(std::unique_ptr<AstInteger>(new AstInteger(a->location, a->module, ~static_cast<AVMInteger_t>(left->value))));
-    case opr_positive:
+    case UnOp_positive:
       return std::move(std::unique_ptr<ReturnTypeAst>(new ReturnTypeAst(a->location, a->module, static_cast<ReturnValueType>(left->value))));
-    case opr_negative:
+    case UnOp_negative:
       return std::move(std::unique_ptr<ReturnTypeAst>(new ReturnTypeAst(a->location, a->module, -1 * static_cast<ReturnValueType>(left->value))));
     default:
       return nullptr;

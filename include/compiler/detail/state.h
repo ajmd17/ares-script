@@ -16,10 +16,10 @@ static const int compiler_global_level = 0;
 
 struct CompilerState {
   enum LevelType {
-    LEVEL_DEFAULT,
-    LEVEL_FUNCTION,
-    LEVEL_LOOP,
-    LEVEL_CONDITIONAL
+    Level_default,
+    Level_function,
+    Level_loop,
+    Level_condition
   };
 
   struct ExternalFunction {

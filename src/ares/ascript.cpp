@@ -38,14 +38,14 @@ double Toc() {
 bool Script::Run() {
   using namespace avm;
 
-  Lexer l(code, original_path);
-  auto tokens = l.ScanTokens();
+  Lexer lexer(code, original_path);
+  auto tokens = lexer.ScanTokens();
 
-  Parser p(tokens, l.state);
-  auto unit = p.parse();
+  Parser parser(tokens, lexer.state);
+  auto unit = parser.Parse();
 
   if (unit) {
-    Compiler compiler(p.state);
+    Compiler compiler(parser.state);
 
     compiler.Module("Clock")
       .Define("start", 0)
@@ -55,7 +55,10 @@ bool Script::Run() {
       .Define("write", 2)
       .Define("read", 2)
       .Define("close", 1);
+    compiler.Module("Reflection")
+      .Define("typeof", 1);
     compiler.Module("Convert")
+      .Define("toString", 1)
       .Define("toInt", 1)
       .Define("toBool", 1);
     compiler.Module("System")
@@ -86,7 +89,7 @@ bool Script::Run() {
 
       VMInstance *vm = new VMInstance();
 
-      vm->BindFunction("FileIO_open", RuntimeLib::OpenFile);
+      /*vm->BindFunction("FileIO_open", RuntimeLib::OpenFile);
       vm->BindFunction("FileIO_write", RuntimeLib::WriteStringToFile);
       vm->BindFunction("FileIO_read", RuntimeLib::ReadStringFromFile);
       vm->BindFunction("FileIO_close", RuntimeLib::CloseFile);
@@ -101,7 +104,13 @@ bool Script::Run() {
 
       vm->BindFunction("Console_write", RuntimeLib::ConsoleWrite);
       vm->BindFunction("Console_writeln", RuntimeLib::ConsoleWriteLn);
-      vm->BindFunction("Console_readln", RuntimeLib::ConsoleReadLn);
+      vm->BindFunction("Console_readln", RuntimeLib::ConsoleReadLn);*/
+      
+      vm->BindFunction("Reflection_typeof", RuntimeLib::Reflection_typeof);
+
+      vm->BindFunction("Convert_toString", RuntimeLib::Convert_toString);
+      vm->BindFunction("Convert_toInt", RuntimeLib::Convert_toInt);
+      vm->BindFunction("Convert_toBool", RuntimeLib::Convert_toBool);
 
       vm->Execute(stream);
 

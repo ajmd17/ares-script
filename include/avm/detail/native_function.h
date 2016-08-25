@@ -17,7 +17,7 @@ public:
   }
 
   virtual void invoke(VMState *, uint32_t) = 0;
-  virtual Reference clone(Heap &heap) = 0;
+  virtual Reference Clone(VMState *state) = 0;
 
   std::string ToString() const {
     return "<" + TypeString() + ">";
@@ -33,10 +33,10 @@ protected:
   const size_t nargs;
 };
 
-template <typename ReturnType>
+//template <typename ReturnType>
 class NativeFunc_NoArgs : public NativeFunc {
 public:
-  typedef ReturnType(*FuncType) (void);
+  typedef void(*FuncType) (VMState*);//ReturnType(*FuncType) (void);
 
   NativeFunc_NoArgs(FuncType ptr)
     : ptr(ptr), NativeFunc(0) {
@@ -44,7 +44,7 @@ public:
 
   void invoke(VMState *state, uint32_t callargs) {
     if (CheckArgs(state, nargs, callargs)) {
-      ReturnType return_value = ptr();
+      /*ReturnType return_value = ptr();
     
       auto ref = Reference(*state->heap.AllocNull());
       auto var = new Variable();
@@ -53,12 +53,14 @@ public:
       var->flags |= Object::FLAG_TEMPORARY;
       ref.Ref() = var;
 
-      state->stack.push_back(ref);
+      state->stack.push_back(ref);*/
+
+      ptr(state);
     }
   }
 
-  Reference clone(Heap &heap) {
-    return Reference(*heap.AllocObject<NativeFunc_NoArgs>(ptr));
+  Reference Clone(VMState *state) {
+    return Reference(*state->heap.AllocObject<NativeFunc_NoArgs>(ptr));
   }
 
   std::string TypeString() const {
@@ -70,10 +72,10 @@ private:
   FuncType ptr;
 }; 
 
-template <typename ReturnType, typename T1>
+//template <typename ReturnType, typename T1>
 class NativeFunc_OneArg : public NativeFunc {
 public:
-  typedef ReturnType(*FuncType) (T1);
+  typedef void(*FuncType) (VMState*, Object*); //ReturnType(*FuncType) (T1);
 
   NativeFunc_OneArg(FuncType ptr)
     : ptr(ptr), NativeFunc(1) {
@@ -82,7 +84,7 @@ public:
   void invoke(VMState *state, uint32_t callargs) {
     if (CheckArgs(state, nargs, callargs)) {
       bool error = false;
-      Variable *args[1];
+      /*Variable *args[1];
       for (int i = nargs - 1; i >= 0; i--) {
         auto arg = state->stack.back(); state->stack.pop_back();
         Variable *arg_casted = dynamic_cast<Variable*>(arg.Ref());
@@ -105,18 +107,24 @@ public:
         ref.Ref() = var;
 
         state->stack.push_back(ref);
+      }*/
+
+      Object *args[1];
+      for (int i = nargs - 1; i >= 0; i--) {
+        Reference ref = state->stack.back(); state->stack.pop_back();
+        args[i] = ref.Ref();
       }
+      ptr(state, args[0]);
+
     }
   }
 
-  Reference clone(Heap &heap) {
-    return Reference(*heap.AllocObject<NativeFunc_OneArg>(ptr));
+  Reference Clone(VMState *state) {
+    return Reference(*state->heap.AllocObject<NativeFunc_OneArg>(ptr));
   }
 
   std::string TypeString() const {
-    std::string result("native function (");
-    result += typeid(T1).name();
-    result += ")";
+    std::string result("native function");
     return result;
   }
 
@@ -124,7 +132,7 @@ private:
   FuncType ptr;
 };
 
-template <typename ReturnType, typename T1, typename T2>
+/*template <typename ReturnType, typename T1, typename T2>
 class NativeFunc_TwoArgs : public NativeFunc {
 public:
   typedef ReturnType(*FuncType) (T1, T2);
@@ -178,7 +186,7 @@ public:
 
 private:
   FuncType ptr;
-};
+};*/
 } // namespace avm
 
 #endif

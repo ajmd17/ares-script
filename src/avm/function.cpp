@@ -22,18 +22,18 @@ void Func::invoke(VMState *state, uint32_t callargs) {
 
     state->stream->Seek(addr);
 
-    // read instructions till function is completed
+    auto origin_read_level = state->read_level;
+
+    // read instructions until function is completed
     while (state->stream->Position() < state->stream->Max()) {
-      Opcode_t ins;
+      OpCode_t ins;
       state->stream->Read(&ins);
       state->vm->HandleInstruction(ins);
 
-      if (ins == ins_return) {
-
+      if (ins == OpCode_return && (origin_read_level - 1 == state->read_level)) {
         state->stream->Seek(state->jump_positions.top());
         state->jump_positions.pop();
-        debug_log("Popping back to position: %d", state->stream->Position());
-
+        DebugLog("Popping back to position: %d", state->stream->Position());
         break;
       }
     }
@@ -48,13 +48,13 @@ size_t Func::NumArgs() const {
   return nargs;
 }
 
-Reference Func::clone(Heap &heap) {
-  auto ref = Reference(*heap.AllocObject<Func>(addr, nargs, is_variadic));
+Reference Func::Clone(VMState *state) {
+  auto ref = Reference(*state->heap.AllocObject<Func>(addr, nargs, is_variadic));
 
   // copy all members
   for (auto &&member : fields) {
     if (member.second.Ref() != nullptr) {
-      ref.Ref()->AddFieldReference(member.first, member.second.Ref()->clone(heap));
+      ref.Ref()->AddFieldReference(state, member.first, member.second.Ref()->Clone(state));
     }
   }
 

@@ -8,7 +8,7 @@
 namespace avm {
 
 template <typename...Args>
-inline void debug_log(const char *format, Args &&... args) {
+inline void DebugLog(const char *format, Args &&... args) {
 #if DEBUG_PRINT
   printf(format, args...);
   printf("\n");

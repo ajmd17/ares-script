@@ -5,12 +5,6 @@ Frame::Frame()
   : last_cond(false), exception_occured(false) {
 }
 
-Frame::~Frame() {
-  //for (auto it = locals.rbegin(); it != locals.rend(); ++it) {
-    //it->second.DeleteObject();
-  //}
-}
-
 bool Frame::GetLocal(const AVMString_t &name, Reference &out) {
   auto elt = std::find_if(locals.begin(), locals.end(),
     [&name](const std::pair<AVMString_t, Reference> &element) {

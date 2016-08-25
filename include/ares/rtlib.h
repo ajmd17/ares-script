@@ -2,13 +2,15 @@
 #define RTLIB_H
 
 #include <common/types.h>
+#include <avm/detail/variable.h>
+#include <avm/detail/vm_state.h>
 
 #include <cstdio>
 
 namespace avm {
 class RuntimeLib {
 public:
-  static FILE *OpenFile(const AVMString_t &filepath, const AVMString_t &mode);
+  /*static FILE *OpenFile(const AVMString_t &filepath, const AVMString_t &mode);
   static AVMInteger_t WriteStringToFile(FILE *stream, const AVMString_t &str);
   static AVMString_t ReadStringFromFile(FILE *stream, AVMInteger_t len);
   static AVMInteger_t CloseFile(FILE *stream);
@@ -20,7 +22,14 @@ public:
 
   static AVMString_t ConsoleWrite(const AVMString_t &str);
   static AVMString_t ConsoleWriteLn(const AVMString_t &str);
-  static AVMString_t ConsoleReadLn();
+  static AVMString_t ConsoleReadLn();*/
+
+  static void Reflection_typeof(VMState *state, Object *arg1);
+
+  static void Convert_toString(VMState *state, Object *arg1);
+  static void Convert_toInt(VMState *state, Object *arg1);
+  static void Convert_toBool(VMState *state, Object *arg1);
+
 };
 }
 

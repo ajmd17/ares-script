@@ -16,7 +16,7 @@ public:
   uint64_t Address() const;
   size_t NumArgs() const;
 
-  virtual Reference clone(Heap &heap);
+  virtual Reference Clone(VMState *state);
 
   std::string ToString() const;
   std::string TypeString() const;

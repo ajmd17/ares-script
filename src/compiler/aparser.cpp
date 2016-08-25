@@ -11,14 +11,14 @@ Parser::Parser(std::vector<Token> tokens, LexerState lexer_state) {
   filepath = lexer_state.location.file;
 }
 
-std::unique_ptr<AstModule> Parser::parse() {
+std::unique_ptr<AstModule> Parser::Parse() {
   std::unique_ptr<AstModule> unit = nullptr;
   std::string module_name = "__anon";
 
-  if (!MatchRead(tk_keyword, keyword_tostr(kw_module))) {
+  if (!MatchRead(Token_keyword, Keyword_ToString(Keyword_module))) {
     ErrorMsg(msg_expected_module, Location());
   } else {
-    Token *ident = ExpectRead(tk_identifier);
+    Token *ident = ExpectRead(Token_identifier);
     if (ident != nullptr) {
       module_name = ident->value;
 
@@ -103,19 +103,19 @@ Token *Parser::ExpectRead(TokenType type) {
     Token *bad = Read();
     if (bad) {
       switch (type) {
-      case tk_identifier:
+      case Token_identifier:
         ErrorMsg(msg_expected_identifier, bad->location);
         break;
         // FALLTHROUGH
-      case tk_open_parenthesis:
-      case tk_close_parenthesis:
-      case tk_open_brace:
-      case tk_close_brace:
-      case tk_open_bracket:
-      case tk_close_bracket:
-      case tk_semicolon:
-      case tk_colon:
-      case tk_comma:
+      case Token_open_parenthesis:
+      case Token_close_parenthesis:
+      case Token_open_brace:
+      case Token_close_brace:
+      case Token_open_bracket:
+      case Token_close_bracket:
+      case Token_semicolon:
+      case Token_colon:
+      case Token_comma:
         ErrorMsg(msg_expected_token, bad->location, Token::TokenTypeToString(type));
         break;
       default:
@@ -146,15 +146,15 @@ Token *Parser::ExpectRead(TokenType type, const std::string &str) {
 
 int Parser::OpPrecedence() {
   auto *current = Peek();
-  if (!(current && current->type == tk_operator)) {
+  if (!(current && current->type == Token_operator)) {
     return -1;
   }
 
-  st_binary_operator op = bin_opr_fromstr(current->value);
-  if (op == st_binary_operator::bin_opr_invalid) {
+  BinaryOp op = BinaryOp_FromString(current->value);
+  if (op == BinaryOp::BinOp_invalid) {
     ErrorMsg(msg_illegal_operator, current->location, current->value);
   }
-  return opr_precedence(op);
+  return BinaryOp_Precedence(op);
 }
 
 /** An import statement allows the inclusion of external code.
@@ -176,20 +176,20 @@ int Parser::OpPrecedence() {
 
 */
 std::unique_ptr<AstNode> Parser::ParseImports() {
-  Token *tok = ExpectRead(tk_keyword, keyword_tostr(kw_import));
+  Token *tok = ExpectRead(Token_keyword, Keyword_ToString(Keyword_import));
 
   // imports can be declared within a set of braces, or on a single line
-  if (!MatchRead(tk_open_brace)) {
+  if (!MatchRead(Token_open_brace)) {
     return ParseImport();
   }
 
   std::vector<std::unique_ptr<AstNode>> imports;
   while (Peek()) {
-    if (MatchRead(tk_close_brace)) {
+    if (MatchRead(Token_close_brace)) {
       break;
     }
     imports.push_back(ParseImport());
-    if (MatchRead(tk_close_brace) || !ExpectRead(tk_comma)) {
+    if (MatchRead(Token_close_brace) || !ExpectRead(Token_comma)) {
       break;
     }
   }
@@ -205,10 +205,10 @@ std::unique_ptr<AstNode> Parser::ParseImport() {
   std::string value;
 
   Token *tok = nullptr;
-  if (MatchRead(tk_string, tok)) {
+  if (MatchRead(Token_string, tok)) {
     is_module_import = false;
     value = tok->value;
-  } else if (MatchRead(tk_identifier, tok)) {
+  } else if (MatchRead(Token_identifier, tok)) {
     is_module_import = true;
     value = tok->value;
   } else {
@@ -226,56 +226,59 @@ std::unique_ptr<AstNode> Parser::ParseImport() {
 }
 
 std::unique_ptr<AstNode> Parser::ParseStatement() {
-  if (MatchRead(tk_semicolon)) {
+  if (MatchRead(Token_semicolon)) {
     return std::move(std::unique_ptr<AstStatement>(new AstStatement(Location(), main_module)));
   }
 
   std::unique_ptr<AstNode> node = nullptr;
-  if (Match(tk_keyword)) {
+  if (Match(Token_keyword)) {
     auto *before = Peek(-1);
-    if (!before ||
-      !(before->type == tk_semicolon ||
-        before->type == tk_open_brace ||
-        before->type == tk_close_brace ||
-        before->type == tk_colon ||
-        before->type == tk_period ||
-        before->type == tk_right_arrow ||
-        before->type == tk_left_arrow)) {
-      WarningMsg(msg_expected_semicolon, before->location);
+    if (before &&
+      !(before->type == Token_semicolon ||
+        before->type == Token_open_brace ||
+        before->type == Token_close_brace ||
+        before->type == Token_colon ||
+        before->type == Token_period ||
+        before->type == Token_right_arrow ||
+        before->type == Token_left_arrow)) {
+
+      SourceLocation loc(before->location.line, 
+        before->location.column + before->value.length(), before->location.file);
+      WarningMsg(msg_expected_semicolon, loc);
     }
 
     const std::string &val = Peek()->value;
 
-    if (val == keyword_tostr(kw_var)) {
+    if (val == Keyword_ToString(Keyword_var)) {
       node = ParseVariableDeclaration();
-    } else if (val == keyword_tostr(kw_alias)) {
+    } else if (val == Keyword_ToString(Keyword_alias)) {
       node = ParseAlias();
-    } else if (val == keyword_tostr(kw_using)) {
+    } else if (val == Keyword_ToString(Keyword_using)) {
       node = ParseUsing();
-    } else if (val == keyword_tostr(kw_attribute)) {
+    } else if (val == Keyword_ToString(Keyword_attribute)) {
       node = ParseAttribute();
-    } else if (val == keyword_tostr(kw_class)) {
+    } else if (val == Keyword_ToString(Keyword_class)) {
       node = ParseClass();
-    } else if (val == keyword_tostr(kw_enum)) {
+    } else if (val == Keyword_ToString(Keyword_enum)) {
       node = ParseEnum();
-    } else if (val == keyword_tostr(kw_import)) {
+    } else if (val == Keyword_ToString(Keyword_import)) {
       node = ParseImports();
-    } else if (val == keyword_tostr(kw_func)) {
+    } else if (val == Keyword_ToString(Keyword_func)) {
       node = ParseFunctionDefinition();
-    } else if (val == keyword_tostr(kw_if)) {
+    } else if (val == Keyword_ToString(Keyword_if)) {
       node = ParseIfStmt();
-    } else if (val == keyword_tostr(kw_return)) {
+    } else if (val == Keyword_ToString(Keyword_return)) {
       node = ParseReturnStmt();
-    } else if (val == keyword_tostr(kw_for)) {
+    } else if (val == Keyword_ToString(Keyword_for)) {
       node = ParseForLoop();
-    } else if (val == keyword_tostr(kw_while)) {
+    } else if (val == Keyword_ToString(Keyword_while)) {
       node = ParseWhileLoop();
-    } else if (val == keyword_tostr(kw_print)) {
+    } else if (val == Keyword_ToString(Keyword_print)) {
       node = ParsePrintStmt();
-    } else if (val == keyword_tostr(kw_else)) {
+    } else if (val == Keyword_ToString(Keyword_else)) {
       ErrorMsg(msg_else_outside_if, Location());
       Read();
-    } else if (val == keyword_tostr(kw_try)) {
+    } else if (val == Keyword_ToString(Keyword_try)) {
       node = ParseTryCatch();
     } else {
       // keyword not handled
@@ -297,7 +300,7 @@ std::unique_ptr<AstNode> Parser::ParseStatement() {
     return parseTry();
     else if (val == getKeyword(KW_SUPER))
     return parseSuper();*/
-  } else if (Match(tk_open_brace)) {
+  } else if (Match(Token_open_brace)) {
     node = ParseCodeBlock();
   } else {
     // finally try parsing as an expression
@@ -307,7 +310,7 @@ std::unique_ptr<AstNode> Parser::ParseStatement() {
     }
   }
 
-  MatchRead(tk_semicolon);
+  MatchRead(Token_semicolon);
 
   return std::move(node);
 }
@@ -325,12 +328,12 @@ std::unique_ptr<AstNode> Parser::ParseStatement() {
       var x: 3;
 */
 std::unique_ptr<AstNode> Parser::ParseVariableDeclaration() {
-  Token *tok = ExpectRead(tk_keyword, keyword_tostr(kw_var));
+  Token *tok = ExpectRead(Token_keyword, Keyword_ToString(Keyword_var));
 
-  if ((!Peek()) || (Peek()->type != tk_identifier)) {
+  if ((!Peek()) || (Peek()->type != Token_identifier)) {
     ErrorMsg(msg_expected_identifier, Location());
   } else {
-    Token *ident_token = ExpectRead(tk_identifier);
+    Token *ident_token = ExpectRead(Token_identifier);
     std::string identifier = ident_token->value;
 
     if (std::isupper(identifier[0])) {
@@ -340,7 +343,7 @@ std::unique_ptr<AstNode> Parser::ParseVariableDeclaration() {
     variable_names.push(identifier);
 
     std::unique_ptr<AstNode> assignment = nullptr;
-    if (MatchRead(tk_operator, bin_opr_tostr(opr_assignment)) || MatchRead(tk_colon)) {
+    if (MatchRead(Token_operator, BinaryOp_ToString(BinOp_assign)) || MatchRead(Token_colon)) {
       assignment = ParseExpression();
     } else {
       // load null value in place of an expression
@@ -357,15 +360,15 @@ std::unique_ptr<AstNode> Parser::ParseVariableDeclaration() {
 }
 
 std::unique_ptr<AstNode> Parser::ParseAlias() {
-  Token *tok = ExpectRead(tk_keyword, keyword_tostr(kw_alias));
+  Token *tok = ExpectRead(Token_keyword, Keyword_ToString(Keyword_alias));
 
-  if ((!Peek()) || (Peek()->type != tk_identifier)) {
+  if ((!Peek()) || (Peek()->type != Token_identifier)) {
     ErrorMsg(msg_expected_identifier, Location());
   } else {
     std::string identifier = Read()->value;
-    if (MatchRead(tk_operator, bin_opr_tostr(opr_assignment)) || MatchRead(tk_colon)) {
+    if (MatchRead(Token_operator, BinaryOp_ToString(BinOp_assign)) || MatchRead(Token_colon)) {
       std::unique_ptr<AstNode> alias_to = nullptr;
-      if (Match(TokenType::tk_identifier) && (alias_to = ParseIdentifier())) {
+      if (Match(TokenType::Token_identifier) && (alias_to = ParseIdentifier())) {
         return std::move(std::unique_ptr<AstAlias>(new AstAlias(tok->location, main_module, identifier, std::move(alias_to))));
       } else {
         ErrorMsg(ErrorType::msg_alias_must_be_identifier, tok->location, identifier);
@@ -385,22 +388,22 @@ std::unique_ptr<AstNode> Parser::ParseAlias() {
       open(...);
 */
 std::unique_ptr<AstNode> Parser::ParseUsing() {
-  Token *tok = ExpectRead(tk_keyword, keyword_tostr(kw_using));
+  Token *tok = ExpectRead(Token_keyword, Keyword_ToString(Keyword_using));
 
-  if (MatchRead(TokenType::tk_keyword, keyword_tostr(kw_module))) {
+  if (MatchRead(TokenType::Token_keyword, Keyword_ToString(Keyword_module))) {
     std::string identifier; // get the identifier after "using".
-    for (int i = 0; Peek(i) && Peek(i)->type == TokenType::tk_identifier;) {
+    for (int i = 0; Peek(i) && Peek(i)->type == TokenType::Token_identifier;) {
       identifier = Read()->value; ++i;
-      if (Peek(i) && MatchRead(TokenType::tk_period)) {
+      if (Peek(i) && MatchRead(TokenType::Token_period)) {
         ++i;
       }
     }
     return std::move(std::unique_ptr<AstUseModule>(new AstUseModule(tok->location, main_module, identifier)));
-  } else if (Match(TokenType::tk_identifier)) {
+  } else if (Match(TokenType::Token_identifier)) {
     std::string identifier; // get the identifier after "using".
-    for (int i = 0; Peek(i) && Peek(i)->type == TokenType::tk_identifier;) {
+    for (int i = 0; Peek(i) && Peek(i)->type == TokenType::Token_identifier;) {
       identifier = Peek(i++)->value;
-      if (Peek(i) && Peek(i)->type == TokenType::tk_period) {
+      if (Peek(i) && Peek(i)->type == TokenType::Token_period) {
         ++i;
       }
     }
@@ -412,17 +415,17 @@ std::unique_ptr<AstNode> Parser::ParseUsing() {
 }
 
 std::unique_ptr<AstNode> Parser::ParseAttribute() {
-  Token *tok = ExpectRead(tk_keyword, keyword_tostr(kw_attribute));
+  Token *tok = ExpectRead(Token_keyword, Keyword_ToString(Keyword_attribute));
   std::vector<std::string> attributes;
 
-  ExpectRead(tk_open_brace);
-  while (Match(tk_string)) {
+  ExpectRead(Token_open_brace);
+  while (Match(Token_string)) {
     attributes.push_back(Read()->value);
-    if (!MatchRead(tk_comma)) {
+    if (!MatchRead(Token_comma)) {
       break;
     }
   }
-  ExpectRead(tk_close_brace);
+  ExpectRead(Token_close_brace);
 
   auto stmt = ParseStatement();
   stmt->attributes = attributes;
@@ -435,9 +438,9 @@ std::unique_ptr<AstNode> Parser::ParseBinaryOp(int expr_prec, std::unique_ptr<As
     if (tok_prec < expr_prec)
       return left;
 
-    Token *tok = ExpectRead(tk_operator);
-    st_binary_operator op = bin_opr_fromstr(tok->value);
-    if (op == st_binary_operator::bin_opr_invalid) {
+    Token *tok = ExpectRead(Token_operator);
+    BinaryOp op = BinaryOp_FromString(tok->value);
+    if (op == BinaryOp::BinOp_invalid) {
       ErrorMsg(msg_illegal_operator, tok->location, tok->value);
     }
 
@@ -461,9 +464,9 @@ std::unique_ptr<AstNode> Parser::ParseBinaryOp(int expr_prec, std::unique_ptr<As
 }
 
 std::unique_ptr<AstNode> Parser::ParseUnaryOp() {
-  Token *tok = ExpectRead(tk_operator);
-  st_unary_operator op = un_opr_fromstr(tok->value);
-  if (op == st_unary_operator::un_opr_invalid) {
+  Token *tok = ExpectRead(Token_operator);
+  UnaryOp op = UnaryOp_FromString(tok->value);
+  if (op == UnaryOp::UnOp_invalid) {
     ErrorMsg(msg_illegal_operator, tok->location, tok->value);
   }
 
@@ -477,12 +480,12 @@ std::unique_ptr<AstNode> Parser::ParseUnaryOp() {
 }
 
 std::unique_ptr<AstNode> Parser::ParseClass() {
-  Token *tok = ExpectRead(tk_keyword, keyword_tostr(kw_class));
-  Token *ident = ExpectRead(tk_identifier);
+  Token *tok = ExpectRead(Token_keyword, Keyword_ToString(Keyword_class));
+  Token *ident = ExpectRead(Token_identifier);
   std::vector<std::unique_ptr<AstNode>> members;
 
-  ExpectRead(tk_open_brace);
-  while (!MatchRead(tk_close_brace)) {
+  ExpectRead(Token_open_brace);
+  while (!MatchRead(Token_close_brace)) {
     members.push_back(std::move(ParseStatement()));
   }
 
@@ -490,28 +493,51 @@ std::unique_ptr<AstNode> Parser::ParseClass() {
     ident->value, std::move(members))));
 }
 
+std::unique_ptr<AstNode> Parser::ParseObjectExpression() {
+  Token *tok = ExpectRead(Token_keyword, Keyword_ToString(Keyword_object));
+
+  std::vector<std::pair<std::string, std::unique_ptr<AstNode>>> members;
+
+  ExpectRead(Token_open_brace);
+  do {
+      Token *ident = nullptr;
+      if (MatchRead(Token_identifier, ident)) {
+          if (MatchRead(Token_operator, BinaryOp_ToString(BinOp_assign)) || MatchRead(Token_colon)) {
+              auto value = ParseExpression();
+              members.push_back({ ident->value, std::move(value) });
+          }
+      } else {
+          break;
+      }
+  } while (MatchRead(Token_comma));
+  ExpectRead(Token_close_brace);
+
+  return std::move(std::unique_ptr<AstObjectExpression>(
+      new AstObjectExpression(tok->location, main_module, std::move(members))));
+}
+
 std::unique_ptr<AstNode> Parser::ParseEnum() {
-  Token *tok = ExpectRead(tk_keyword, keyword_tostr(kw_enum));
-  Token *ident = ExpectRead(tk_identifier);
+  Token *tok = ExpectRead(Token_keyword, Keyword_ToString(Keyword_enum));
+  Token *ident = ExpectRead(Token_identifier);
   std::vector<std::pair<std::string, std::unique_ptr<AstInteger>>> members;
 
   AVMInteger_t start_value = 0;
 
-  ExpectRead(tk_open_brace);
+  ExpectRead(Token_open_brace);
   while (Peek()) {
-    if (MatchRead(tk_close_brace)) {
+    if (MatchRead(Token_close_brace)) {
       break;
     }
     
-    Token *key = ExpectRead(tk_identifier);
-    if (MatchRead(tk_operator, bin_opr_tostr(opr_assignment)) || MatchRead(tk_colon)) {
-      Token *value = ExpectRead(tk_integer);
+    Token *key = ExpectRead(Token_identifier);
+    if (MatchRead(Token_operator, BinaryOp_ToString(BinOp_assign)) || MatchRead(Token_colon)) {
+      Token *value = ExpectRead(Token_integer);
       start_value = atoi(value->value.c_str());
     }
     members.push_back({key->value, std::unique_ptr<AstInteger>(new AstInteger(key->location, main_module, start_value))});
     ++start_value;
 
-    if (MatchRead(tk_close_brace) || !ExpectRead(tk_comma)) {
+    if (MatchRead(Token_close_brace) || !ExpectRead(Token_comma)) {
       break;
     }
   }
@@ -526,19 +552,19 @@ std::unique_ptr<AstNode> Parser::ParseParenthesis() {
   if (!expr) {
     return nullptr;
   }
-  ExpectRead(tk_close_parenthesis);
+  ExpectRead(Token_close_parenthesis);
   return expr;
 }
 
 std::unique_ptr<AstNode> Parser::ParseIntegerLiteral() {
-  Token *tok = ExpectRead(tk_integer);
+  Token *tok = ExpectRead(Token_integer);
   AVMInteger_t value = (AVMInteger_t)atoll(tok->value.c_str());
 
   return std::move(std::unique_ptr<AstInteger>(new AstInteger(tok->location, main_module, value)));
 }
 
 std::unique_ptr<AstNode> Parser::ParseFloatLiteral() {
-  Token *tok = ExpectRead(tk_float);
+  Token *tok = ExpectRead(Token_float);
   AVMFloat_t value = (AVMFloat_t)atof(tok->value.c_str());
 
   return std::move(std::unique_ptr<AstFloat>(new AstFloat(tok->location, main_module, value)));
@@ -558,28 +584,31 @@ std::unique_ptr<AstNode> Parser::ParseIdentifier() {
   // check for semicolon
   auto *before = Peek(-1);
   if (before &&
-    !(before->type == tk_semicolon ||
-      before->type == tk_operator ||
-      before->type == tk_keyword ||
-      before->type == tk_open_brace ||
-      before->type == tk_close_brace ||
-      before->type == tk_open_bracket ||
-      before->type == tk_open_parenthesis ||
-      before->type == tk_period ||
-      before->type == tk_colon ||
-      before->type == tk_comma ||
-      before->type == tk_right_arrow)) {
-    WarningMsg(msg_expected_semicolon, before->location);
+    !(before->type == Token_semicolon ||
+      before->type == Token_operator ||
+      before->type == Token_keyword ||
+      before->type == Token_open_brace ||
+      before->type == Token_close_brace ||
+      before->type == Token_open_bracket ||
+      before->type == Token_open_parenthesis ||
+      before->type == Token_period ||
+      before->type == Token_colon ||
+      before->type == Token_comma ||
+      before->type == Token_right_arrow)) {
+      
+    SourceLocation loc(before->location.line, 
+      before->location.column + before->value.length(), before->location.file);
+    WarningMsg(msg_expected_semicolon, loc);
   }
 
   std::unique_ptr<AstNode> result = nullptr;
-  Token *tok = ExpectRead(tk_identifier);
+  Token *tok = ExpectRead(Token_identifier);
   std::string identifier = tok->value;
-  if (MatchRead(tk_open_parenthesis)) {
+  if (MatchRead(Token_open_parenthesis)) {
     // function call
     std::vector<std::unique_ptr<AstNode>> arguments;
 
-    if (Peek()->type != tk_close_parenthesis) {
+    if (Peek()->type != Token_close_parenthesis) {
       while (true) {
         auto arg = ParseExpression();
         if (!arg) {
@@ -587,9 +616,9 @@ std::unique_ptr<AstNode> Parser::ParseIdentifier() {
         }
         arguments.push_back(std::move(arg));
 
-        if (Peek()->type == tk_close_parenthesis) {
+        if (Peek()->type == Token_close_parenthesis) {
           break;
-        } else if (Peek()->type != tk_comma) {
+        } else if (Peek()->type != Token_comma) {
           ErrorMsg(msg_unexpected_token, Location(), Peek()->value);
           return nullptr;
         }
@@ -607,19 +636,19 @@ std::unique_ptr<AstNode> Parser::ParseIdentifier() {
   }
 
   // check for array indexing
-  if (MatchRead(tk_open_bracket)) {
+  if (MatchRead(Token_open_bracket)) {
     /// \todo implementation
     auto idx = std::move(ParseExpression());
-    ExpectRead(tk_close_bracket);
+    ExpectRead(Token_close_bracket);
     result = std::unique_ptr<AstArrayAccess>(new AstArrayAccess(tok->location, main_module,
       std::move(result), std::move(idx)));
   }
 
   // check for member access (something.whatever) after
-  if (MatchRead(tk_period)) {
+  if (MatchRead(Token_period)) {
     std::unique_ptr<AstNode> next = nullptr;
 
-    if (Match(tk_identifier)) {
+    if (Match(Token_identifier)) {
       next = std::move(ParseIdentifier());
     } else {
       ErrorMsg(msg_expected_identifier, Location());
@@ -635,26 +664,26 @@ std::unique_ptr<AstNode> Parser::ParseIdentifier() {
 
 std::unique_ptr<AstNode> Parser::ParseStringLiteral() {
   std::unique_ptr<AstNode> result = nullptr;
-  Token *tok = ExpectRead(tk_string);
+  Token *tok = ExpectRead(Token_string);
   std::string value = tok->value;
 
   return std::unique_ptr<AstString>(new AstString(tok->location, main_module, value));
 }
 
 std::unique_ptr<AstNode> Parser::ParseTrue() {
-  Token *tok = ExpectRead(tk_keyword, keyword_tostr(kw_true));
+  Token *tok = ExpectRead(Token_keyword, Keyword_ToString(Keyword_true));
 
   return std::unique_ptr<AstTrue>(new AstTrue(tok->location, main_module));
 }
 
 std::unique_ptr<AstNode> Parser::ParseFalse() {
-  Token *tok = ExpectRead(tk_keyword, keyword_tostr(kw_false));
+  Token *tok = ExpectRead(Token_keyword, Keyword_ToString(Keyword_false));
 
   return std::unique_ptr<AstFalse>(new AstFalse(tok->location, main_module));
 }
 
 std::unique_ptr<AstNode> Parser::ParseNull() {
-  Token *tok = ExpectRead(tk_keyword, keyword_tostr(kw_null));
+  Token *tok = ExpectRead(Token_keyword, Keyword_ToString(Keyword_null));
 
   return std::unique_ptr<AstNull>(new AstNull(tok->location, main_module));
 }
@@ -666,15 +695,15 @@ std::unique_ptr<AstNode> Parser::ParseNull() {
         self.x = 4;
 */
 std::unique_ptr<AstNode> Parser::ParseSelf() {
-  Token *tok = ExpectRead(tk_keyword, keyword_tostr(kw_self));
+  Token *tok = ExpectRead(Token_keyword, Keyword_ToString(Keyword_self));
   std::string identifier = tok->value;
   std::unique_ptr<AstNode> result = std::unique_ptr<AstSelf>(new AstSelf(tok->location, main_module));
 
-  if (MatchRead(tk_period)) {
+  if (MatchRead(Token_period)) {
     std::unique_ptr<AstNode> next = nullptr;
 
     std::string left_str = Peek()->value;
-    if (Match(tk_identifier)) {
+    if (Match(Token_identifier)) {
       next = std::move(ParseIdentifier());
     } else {
       ErrorMsg(msg_unexpected_token, Location(), Read()->value);
@@ -693,10 +722,10 @@ std::unique_ptr<AstNode> Parser::ParseSelf() {
         var date = new Date();
 */
 std::unique_ptr<AstNode> Parser::ParseNew(const std::string &identifier) {
-  Token *tok = ExpectRead(tk_keyword, keyword_tostr(kw_new));
+  Token *tok = ExpectRead(Token_keyword, Keyword_ToString(Keyword_new));
 
   std::unique_ptr<AstNode> cls;
-  if (Match(tk_identifier)) {
+  if (Match(Token_identifier)) {
     cls = std::move(ParseIdentifier());
   } else {
     ErrorMsg(msg_unexpected_token, Location(), Read()->value);
@@ -714,29 +743,33 @@ std::unique_ptr<AstNode> Parser::ParseTerm() {
     return nullptr;
   }
 
-  if (Match(tk_open_parenthesis))
+  if (Match(Token_open_parenthesis))
     term = move(ParseParenthesis());
-  else if (Match(tk_integer))
+  else if (Match(Token_integer))
     term = move(ParseIntegerLiteral());
-  else if (Match(tk_float))
+  else if (Match(Token_float))
     term = move(ParseFloatLiteral());
-  else if (Match(tk_identifier))
+  else if (Match(Token_identifier))
     term = move(ParseIdentifier());
-  else if (Match(tk_string))
+  else if (Match(Token_string))
     term = move(ParseStringLiteral());
-  else if (Match(tk_keyword, keyword_tostr(kw_true)))
+  else if (Match(Token_keyword, Keyword_ToString(Keyword_true)))
     term = move(ParseTrue());
-  else if (Match(tk_keyword, keyword_tostr(kw_false)))
+  else if (Match(Token_keyword, Keyword_ToString(Keyword_false)))
     term = move(ParseFalse());
-  else if (Match(tk_keyword, keyword_tostr(kw_null)))
+  else if (Match(Token_keyword, Keyword_ToString(Keyword_null)))
     term = move(ParseNull());
-  else if (Match(tk_keyword, keyword_tostr(kw_self)))
+  else if (Match(Token_keyword, Keyword_ToString(Keyword_self)))
     term = move(ParseSelf());
-  else if (Match(tk_keyword, keyword_tostr(kw_new)))
+  else if (Match(Token_keyword, Keyword_ToString(Keyword_new)))
     term = move(ParseNew(variable_names.top()));
-  else if (Match(tk_keyword, keyword_tostr(kw_func)))
+  else if (Match(Token_keyword, Keyword_ToString(Keyword_object)))
+    term = move(ParseObjectExpression());
+  else if (Match(Token_keyword, Keyword_ToString(Keyword_func)))
     term = move(ParseFunctionExpression());
-  else if (Match(tk_operator))
+  else if (Match(Token_keyword, Keyword_ToString(Keyword_range)))
+    term = move(ParseRange());
+  else if (Match(Token_operator))
     term = move(ParseUnaryOp());
   else
     ErrorMsg(msg_unexpected_token, Location(), Read()->value);
@@ -749,8 +782,11 @@ std::unique_ptr<AstNode> Parser::ParseExpression(bool pop_after) {
   if (!term) {
     return nullptr;
   }
+  if (pop_after) {
+      std::cout << "line: " << term->location.line << " pop stack\n";
+  }
 
-  if (Match(tk_operator)) {
+  if (Match(Token_operator)) {
     // parse binary expression
     auto bin_op = ParseBinaryOp(0, std::move(term));
     if (!bin_op) {
@@ -759,15 +795,14 @@ std::unique_ptr<AstNode> Parser::ParseExpression(bool pop_after) {
 
     term = std::move(bin_op);
   }
-
   return std::unique_ptr<AstExpression>(new AstExpression(Location(), main_module,
     std::move(term), pop_after));
 }
 
 std::unique_ptr<AstNode> Parser::ParseCodeBlock() {
-  Token *tok = ExpectRead(tk_open_brace);
+  Token *tok = ExpectRead(Token_open_brace);
   auto block = std::unique_ptr<AstBlock>(new AstBlock(tok->location, main_module));
-  while (Peek() && !MatchRead(tk_close_brace)) {
+  while (Peek() && !MatchRead(Token_close_brace)) {
     block->AddChild(ParseStatement());
   }
 
@@ -806,9 +841,9 @@ std::unique_ptr<AstNode> Parser::ParseCodeBlock() {
         print_hi();
 */
 std::unique_ptr<AstNode> Parser::ParseFunctionDefinition() {
-  Token *tok = ExpectRead(tk_keyword, keyword_tostr(kw_func));
+  Token *tok = ExpectRead(Token_keyword, Keyword_ToString(Keyword_func));
 
-  Token *ident_token = ExpectRead(tk_identifier);
+  Token *ident_token = ExpectRead(Token_identifier);
   if (!ident_token) {
     return nullptr;
   }
@@ -821,35 +856,35 @@ std::unique_ptr<AstNode> Parser::ParseFunctionDefinition() {
   std::vector<std::string> arguments;
   bool variadic = false;
 
-  if (MatchRead(tk_open_parenthesis)) {
+  if (MatchRead(Token_open_parenthesis)) {
     while (true) {
       Token *tok = nullptr;
-      if (MatchRead(tk_identifier, tok)) {
+      if (MatchRead(Token_identifier, tok)) {
         if (variadic) {
           ErrorMsg(msg_argument_after_varargs, Location());
         }
 
         arguments.push_back(tok->value);
 
-        if (MatchRead(tk_ellipsis)) {
+        if (MatchRead(Token_ellipsis)) {
           variadic = true;
         }
 
-        if (!MatchRead(tk_comma)) {
+        if (!MatchRead(Token_comma)) {
           break;
         }
       } else {
         break;
       }
     }
-    ExpectRead(tk_close_parenthesis);
+    ExpectRead(Token_close_parenthesis);
   }
 
   std::unique_ptr<AstNode> block = nullptr;
-  if (Peek() && Peek()->type == tk_open_brace) {
+  if (Peek() && Peek()->type == Token_open_brace) {
     block = ParseStatement(); // read the block
   } else {
-    ExpectRead(tk_right_arrow);
+    ExpectRead(Token_right_arrow);
     // generate a function body from a statement
     auto block_ast = std::unique_ptr<AstBlock>(new AstBlock(Location(), main_module));
     block_ast->children.push_back(ParseStatement());
@@ -876,17 +911,17 @@ std::unique_ptr<AstNode> Parser::ParseFunctionDefinition() {
     \todo Syntax similar to this for efficient lambda declaration: var lambda => return x;
 */
 std::unique_ptr<AstNode> Parser::ParseFunctionExpression() {
-  Token *tok = ExpectRead(tk_keyword, keyword_tostr(kw_func));
+  Token *tok = ExpectRead(Token_keyword, Keyword_ToString(Keyword_func));
 
   std::vector<std::string> arguments;
-  if (MatchRead(tk_colon)) {
+  if (MatchRead(Token_colon)) {
     while (true) {
-      Token *tok = ExpectRead(tk_identifier);
+      Token *tok = ExpectRead(Token_identifier);
       if (!tok) {
         return nullptr;
       }
       arguments.push_back(tok->value);
-      if (Peek()->type != tk_comma) {
+      if (Peek()->type != Token_comma) {
         break;
       } else {
         Read(); // read the comma
@@ -895,10 +930,10 @@ std::unique_ptr<AstNode> Parser::ParseFunctionExpression() {
   }
 
   std::unique_ptr<AstNode> block = nullptr;
-  if (Peek() && Peek()->type == tk_open_brace) {
+  if (Peek() && Peek()->type == Token_open_brace) {
     block = ParseStatement(); // read the block
   } else {
-    ExpectRead(tk_right_arrow);
+    ExpectRead(Token_right_arrow);
     // generate a function body from a statement
     auto block_ast = std::unique_ptr<AstBlock>(new AstBlock(Location(), main_module));
     block_ast->children.push_back(ParseStatement());
@@ -918,20 +953,20 @@ std::unique_ptr<AstNode> Parser::ParseFunctionExpression() {
         print 'x is equal to 3';
 */
 std::unique_ptr<AstNode> Parser::ParseIfStmt() {
-  Token *tok = ExpectRead(tk_keyword, keyword_tostr(kw_if));
+  Token *tok = ExpectRead(Token_keyword, Keyword_ToString(Keyword_if));
   auto condition = ParseExpression();
 
   std::unique_ptr<AstNode> if_block = nullptr;
-  if (Peek() && Peek()->type == tk_open_brace) {
+  if (Peek() && Peek()->type == Token_open_brace) {
     if_block = ParseStatement(); // read the block
-  } else if (MatchRead(tk_colon)) {
+  } else if (MatchRead(Token_colon)) {
     auto block_ast = std::unique_ptr<AstBlock>(new AstBlock(Location(), main_module));
     auto stmt = ParseStatement();
     if (stmt != nullptr) {
       block_ast->children.push_back(std::move(stmt));
     }
     if_block = std::move(block_ast);
-  } else if (MatchRead(tk_semicolon)) {
+  } else if (MatchRead(Token_semicolon)) {
     // if nothing else, we need a semicolon
     if_block = std::unique_ptr<AstBlock>(new AstBlock(Location(), main_module));
   } else {
@@ -939,17 +974,17 @@ std::unique_ptr<AstNode> Parser::ParseIfStmt() {
   }
 
   std::unique_ptr<AstNode> else_block = nullptr;
-  if (MatchRead(tk_keyword, keyword_tostr(kw_else))) {
-    if (Peek() && Peek()->type == tk_open_brace) {
+  if (MatchRead(Token_keyword, Keyword_ToString(Keyword_else))) {
+    if (Peek() && Peek()->type == Token_open_brace) {
       else_block = ParseStatement(); // read the block
-    } else if (MatchRead(tk_colon)) {
+    } else if (MatchRead(Token_colon)) {
       auto block_ast = std::unique_ptr<AstBlock>(new AstBlock(Location(), main_module));
       auto stmt = ParseStatement();
       if (stmt != nullptr) {
         block_ast->children.push_back(std::move(stmt));
       }
       else_block = std::move(block_ast);
-    } else if (MatchRead(tk_semicolon)) {
+    } else if (MatchRead(Token_semicolon)) {
       // if nothing else, we need a semicolon
       else_block = std::unique_ptr<AstBlock>(new AstBlock(Location(), main_module));
     } else {
@@ -979,10 +1014,10 @@ std::unique_ptr<AstNode> Parser::ParseIfStmt() {
         print (x + 2) * 4; // Will confuse the parser
 */
 std::unique_ptr<AstNode> Parser::ParsePrintStmt() {
-  Token *tok = ExpectRead(tk_keyword, keyword_tostr(kw_print));
+  Token *tok = ExpectRead(Token_keyword, Keyword_ToString(Keyword_print));
 
   bool parenthesis = false;
-  if (MatchRead(TokenType::tk_open_parenthesis)) {
+  if (MatchRead(TokenType::Token_open_parenthesis)) {
     parenthesis = true;
   }
 
@@ -990,20 +1025,20 @@ std::unique_ptr<AstNode> Parser::ParsePrintStmt() {
   while (true) {
     print_ast->AddArgument(ParseExpression());
 
-    if (!MatchRead(TokenType::tk_comma)) {
+    if (!MatchRead(TokenType::Token_comma)) {
       break;
     }
   }
 
   if (parenthesis) {
-    ExpectRead(TokenType::tk_close_parenthesis);
+    ExpectRead(TokenType::Token_close_parenthesis);
   }
 
   return std::move(print_ast);
 }
 
 std::unique_ptr<AstNode> Parser::ParseReturnStmt() {
-  Token *tok = ExpectRead(tk_keyword, keyword_tostr(kw_return));
+  Token *tok = ExpectRead(Token_keyword, Keyword_ToString(Keyword_return));
   auto expr = ParseExpression();
 
   return std::unique_ptr<AstReturnStmt>(new AstReturnStmt(tok->location, main_module,
@@ -1026,39 +1061,66 @@ std::unique_ptr<AstNode> Parser::ParseReturnStmt() {
       - Afterthought
 */
 std::unique_ptr<AstNode> Parser::ParseForLoop() {
-  Token *tok = ExpectRead(tk_keyword, keyword_tostr(kw_for));
-  ExpectRead(tk_open_parenthesis);
+  Token *tok = ExpectRead(Token_keyword, Keyword_ToString(Keyword_for));
+
+  /*Token *ident = ExpectRead(Token_identifier);
+  ExpectRead(Token_keyword, Keyword_ToString(Keyword_in));
+
+  auto range = ParseRange();
+
+  std::unique_ptr<AstNode> loop_block = nullptr;
+  if (Peek() && Peek()->type == Token_open_brace) {
+      loop_block = ParseStatement(); // read the block
+  } else {
+      auto block_ast = std::unique_ptr<AstBlock>(new AstBlock(Location(), main_module));
+      block_ast->children.push_back(ParseStatement());
+      loop_block = std::move(block_ast);
+  }
+  return std::unique_ptr<AstForLoop>(new AstForLoop(tok->location, main_module,
+      std::move(ident->value), std::move(range), std::move(loop_block)));*/
+
+  bool has_parenthesis = MatchRead(Token_open_parenthesis);
 
   // read initializer
   std::unique_ptr<AstNode> init_expr = nullptr;
-  if (!MatchRead(tk_semicolon)) {
+  if (!MatchRead(Token_semicolon)) {
     init_expr = ParseStatement();
-    ExpectRead(tk_semicolon);
   }
 
   // read conditional
   std::unique_ptr<AstNode> cond_expr = nullptr;
-  if (MatchRead(tk_semicolon)) {
+  if (MatchRead(Token_semicolon)) {
     cond_expr = std::unique_ptr<AstTrue>(new AstTrue(Location(), main_module));
   } else {
     cond_expr = ParseExpression();
-    ExpectRead(tk_semicolon);
+    ExpectRead(Token_semicolon);
   }
 
   // read increment
   std::unique_ptr<AstNode> inc_expr = nullptr;
-  if (!MatchRead(tk_close_parenthesis)) {
+  if (!Match(Token_open_brace)) {
     inc_expr = ParseExpression();
-    ExpectRead(tk_close_parenthesis);
+  }
+
+  if (has_parenthesis) {
+      ExpectRead(Token_close_parenthesis);
   }
 
   std::unique_ptr<AstNode> loop_block = nullptr;
-  if (Peek() && Peek()->type == tk_open_brace) {
-    loop_block = ParseStatement(); // read the block
+  if (Peek() && Peek()->type == Token_open_brace) {
+      loop_block = ParseStatement(); // read the block
+  } else if (MatchRead(Token_colon)) {
+      auto block_ast = std::unique_ptr<AstBlock>(new AstBlock(Location(), main_module));
+      auto stmt = ParseStatement();
+      if (stmt != nullptr) {
+          block_ast->children.push_back(std::move(stmt));
+      }
+      loop_block = std::move(block_ast);
+  } else if (MatchRead(Token_semicolon)) {
+      // if nothing else, we need a semicolon
+      loop_block = std::unique_ptr<AstBlock>(new AstBlock(Location(), main_module));
   } else {
-    auto block_ast = std::unique_ptr<AstBlock>(new AstBlock(Location(), main_module));
-    block_ast->children.push_back(ParseStatement());
-    loop_block = std::move(block_ast);
+      ErrorMsg(msg_unexpected_token, Location(), Read()->value);
   }
 
   return std::unique_ptr<AstForLoop>(new AstForLoop(tok->location, main_module,
@@ -1094,22 +1156,22 @@ std::unique_ptr<AstNode> Parser::ParseForLoop() {
         x = 5
 */
 std::unique_ptr<AstNode> Parser::ParseWhileLoop() {
-  Token *tok = ExpectRead(tk_keyword, keyword_tostr(kw_while));
+  Token *tok = ExpectRead(Token_keyword, Keyword_ToString(Keyword_while));
 
   // read conditional
   std::unique_ptr<AstNode> cond_expr = ParseExpression();
 
   std::unique_ptr<AstNode> loop_block = nullptr;
-  if (Peek() && Peek()->type == tk_open_brace) {
+  if (Peek() && Peek()->type == Token_open_brace) {
     loop_block = ParseStatement(); // read the block
-  } else if (MatchRead(tk_colon)) {
+  } else if (MatchRead(Token_colon)) {
     auto block_ast = std::unique_ptr<AstBlock>(new AstBlock(Location(), main_module));
     auto stmt = ParseStatement();
     if (stmt != nullptr) {
       block_ast->children.push_back(std::move(stmt));
     }
     loop_block = std::move(block_ast);
-  } else if (MatchRead(tk_semicolon)) {
+  } else if (MatchRead(Token_semicolon)) {
     // if nothing else, we need a semicolon
     loop_block = std::unique_ptr<AstBlock>(new AstBlock(Location(), main_module));
   } else {
@@ -1121,12 +1183,12 @@ std::unique_ptr<AstNode> Parser::ParseWhileLoop() {
 }
 
 std::unique_ptr<AstNode> Parser::ParseTryCatch() {
-  Token *tok = ExpectRead(tk_keyword, keyword_tostr(kw_try));
+  Token *tok = ExpectRead(Token_keyword, Keyword_ToString(Keyword_try));
 
   std::unique_ptr<AstNode> try_block = nullptr;
-  if (Peek() && Peek()->type == tk_open_brace) {
+  if (Peek() && Peek()->type == Token_open_brace) {
     try_block = ParseStatement(); // read the block
-  } else if (MatchRead(tk_colon)) {
+  } else if (MatchRead(Token_colon)) {
     auto block_ast = std::unique_ptr<AstBlock>(new AstBlock(Location(), main_module));
     auto stmt = ParseStatement();
     if (stmt != nullptr) {
@@ -1137,21 +1199,21 @@ std::unique_ptr<AstNode> Parser::ParseTryCatch() {
     ErrorMsg(msg_unexpected_token, Location(), Read()->value);
   }
 
-  ExpectRead(tk_keyword, keyword_tostr(kw_catch));
+  ExpectRead(Token_keyword, Keyword_ToString(Keyword_catch));
 
   // catch blocks do not require an identifier for the exception object,
   // they may also be optionally enclosed in parenthesis.
   std::unique_ptr<AstNode> exception_variable(nullptr);
 
-  if (MatchRead(tk_open_parenthesis)) {
-    auto *identifier = ExpectRead(tk_identifier);
+  if (MatchRead(Token_open_parenthesis)) {
+    auto *identifier = ExpectRead(Token_identifier);
     if (identifier) {
       exception_variable = std::unique_ptr<AstVariableDeclaration>(new AstVariableDeclaration(Location(), main_module,
         identifier->value, std::unique_ptr<AstNull>(new AstNull(Location(), main_module)), /*make object const*/ true));
     }
-    ExpectRead(tk_close_parenthesis);
-  } else if (Match(tk_identifier)) {
-    auto *identifier = ExpectRead(tk_identifier);
+    ExpectRead(Token_close_parenthesis);
+  } else if (Match(Token_identifier)) {
+    auto *identifier = ExpectRead(Token_identifier);
     if (identifier) {
       exception_variable = std::unique_ptr<AstVariableDeclaration>(new AstVariableDeclaration(Location(), main_module,
         identifier->value, std::unique_ptr<AstNull>(new AstNull(Location(), main_module)), /*make object const*/ true));
@@ -1159,9 +1221,9 @@ std::unique_ptr<AstNode> Parser::ParseTryCatch() {
   }
 
   std::unique_ptr<AstNode> catch_block = nullptr;
-  if (Peek() && Peek()->type == tk_open_brace) {
+  if (Peek() && Peek()->type == Token_open_brace) {
     catch_block = ParseStatement(); // read the block
-  } else if (MatchRead(tk_colon)) {
+  } else if (MatchRead(Token_colon)) {
     auto block_ast = std::unique_ptr<AstBlock>(new AstBlock(Location(), main_module));
     auto stmt = ParseStatement();
     if (stmt != nullptr) {
@@ -1174,5 +1236,17 @@ std::unique_ptr<AstNode> Parser::ParseTryCatch() {
 
   return std::unique_ptr<AstTryCatch>(new AstTryCatch(tok->location, main_module,
     std::move(try_block), std::move(catch_block), std::move(exception_variable)));
+}
+
+std::unique_ptr<AstNode> Parser::ParseRange() {
+    Token *tok = ExpectRead(Token_keyword, Keyword_ToString(Keyword_range));
+
+    ExpectRead(Token_open_parenthesis);
+    Token *first = ExpectRead(Token_integer);
+    ExpectRead(Token_comma);
+    Token *second = ExpectRead(Token_integer);
+    ExpectRead(Token_close_parenthesis);
+
+    return nullptr;
 }
 } // namespace avm

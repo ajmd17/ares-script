@@ -18,7 +18,7 @@ public:
   ParserState state;
 
   Parser(std::vector<Token> tokens, LexerState lexerState);
-  std::unique_ptr<AstModule> parse();
+  std::unique_ptr<AstModule> Parse();
 
 private:
   AstNode *main_module;
@@ -63,6 +63,7 @@ private:
   std::unique_ptr<AstNode> ParseBinaryOp(int prec, std::unique_ptr<AstNode> left);
   std::unique_ptr<AstNode> ParseUnaryOp();
   std::unique_ptr<AstNode> ParseClass();
+  std::unique_ptr<AstNode> ParseObjectExpression();
   std::unique_ptr<AstNode> ParseEnum();
   std::unique_ptr<AstNode> ParseCodeBlock();
   std::unique_ptr<AstNode> ParseFunctionDefinition();
@@ -73,6 +74,7 @@ private:
   std::unique_ptr<AstNode> ParseForLoop();
   std::unique_ptr<AstNode> ParseWhileLoop();
   std::unique_ptr<AstNode> ParseTryCatch();
+  std::unique_ptr<AstNode> ParseRange();
 
   template <typename ... Args>
   void ErrorMsg(ErrorType type, SourceLocation loc, Args && ... args) {

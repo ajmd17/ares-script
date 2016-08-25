@@ -56,6 +56,7 @@ protected:
   void Accept(AstFunctionExpression *node);
   void Accept(AstFunctionCall *node);
   void Accept(AstClass *node);
+  void Accept(AstObjectExpression *node);
   void Accept(AstEnum *node);
   void Accept(AstIfStmt *node);
   void Accept(AstPrintStmt *node);
@@ -63,6 +64,7 @@ protected:
   void Accept(AstForLoop *node);
   void Accept(AstWhileLoop *node);
   void Accept(AstTryCatch *node);
+  void Accept(AstRange *node);
 
 private:
   CompilerState state;

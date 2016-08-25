@@ -18,7 +18,8 @@ private:
   Token NextToken();
 
   Token ReadNumberLiteral();
-  Token ReadFloatLiteral(std::string &);
+  Token ReadHexNumberLiteral();
+  Token ReadFloatLiteral();
   Token ReadStringLiteral();
   Token ReadMultistringLiteral();
   Token ReadIdentifier();

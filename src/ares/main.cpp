@@ -3,10 +3,11 @@
 #include <string>
 #include <cstring>
 #include <cstdlib>
+#include <iomanip>
 
 #include <ascript.h>
 
-int main(int argc, char **argv) {
+int main(int argc, char *argv[]) {
   std::string code = "";
   std::string output_file = "";
   std::string input_file = "";
@@ -31,7 +32,7 @@ int main(int argc, char **argv) {
 
       if (!file.is_open()) {
         std::cout << "File not found: " << input_file << "\n";
-        return EXIT_FAILURE;
+        return 1;
       }
 
       code = std::string((std::istreambuf_iterator<char>(file)),
@@ -49,13 +50,19 @@ int main(int argc, char **argv) {
     ares::Script script(code, input_file, output_file);
     if (!script.Run()) {
       std::cout << "Error: The script could not be compiled.\n";
-      return EXIT_FAILURE;
+      std::system("pause");
+      return 1;
     }
+
   } else {
     std::string program_path(argv[0]);
     std::string program_file =
       program_path.substr(program_path.find_last_of("/\\") + 1);
+
     std::cout << "Usage: " << program_file << " <filepath>\n";
+    std::cout << "\t-o <filepath>: Output bytecode to a specified file.\n";
+    std::cout << "\t-code <code string>: Execute code from a string, rather than from a file.\n";
   }
-  return EXIT_SUCCESS;
+  std::system("pause");
+  return 0;
 }

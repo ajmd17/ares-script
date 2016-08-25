@@ -18,8 +18,8 @@ void Variable::invoke(VMState *state, uint32_t callargs) {
   state->HandleException(BadInvokeException(TypeString()));
 }
 
-Reference Variable::clone(Heap &heap) {
-  auto ref = Reference(*heap.AllocNull());
+Reference Variable::Clone(VMState *state) {
+  auto ref = Reference(*state->heap.AllocNull());
 
   auto var = new Variable();
   var->value = value;
@@ -29,7 +29,7 @@ Reference Variable::clone(Heap &heap) {
   // copy all members
   for (auto &&member : fields) {
     if (member.second.Ref() != nullptr) {
-      ref.Ref()->AddFieldReference(member.first, member.second.Ref()->clone(heap));
+      ref.Ref()->AddFieldReference(state, member.first, member.second.Ref()->Clone(state));
     }
   }
 
@@ -518,15 +518,15 @@ std::string Variable::ToString() const {
     return value.Get<AVMString_t>();
   case type_structure:
   {
-    std::string result = "{";
+    std::string result = "{ ";
     for (size_t i = 0; i < fields.size(); i++) {
       auto &it = fields[i];
-      result += "\"" + it.first + "\"=" + it.second.Ref()->ToString();
+      result += it.first + ": " + it.second.Ref()->ToString();
       if (i < fields.size() - 1) {
         result += ", ";
       }
     }
-    result += "}";
+    result += " }";
     return result;
   }
   default:
@@ -539,7 +539,7 @@ std::string Variable::TypeString() const {
   case type_null:
     return "null";
   case type_integer:
-    return "integer";
+    return "int";
   case type_float:
     return "float";
   case type_string:

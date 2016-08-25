@@ -8,119 +8,119 @@
 #include <exception>
 
 namespace avm {
-enum st_binary_operator {
-  bin_opr_invalid = -1,
-  opr_power,
-  opr_multiply,
-  opr_divide,
-  opr_floor_divide,
-  opr_modulus,
-  opr_add,
-  opr_subtract,
+enum BinaryOp {
+  BinOp_invalid = -1,
+  BinOp_power,
+  BinOp_multiply,
+  BinOp_divide,
+  BinOp_floor_divide,
+  BinOp_modulus,
+  BinOp_add,
+  BinOp_subtract,
 
-  opr_bitxor,
-  opr_bitand,
-  opr_bitor,
-  opr_bitand_assign,
-  opr_bitxor_assign,
-  opr_bitor_assign,
-  opr_bitshift_left,
-  opr_bitshift_right,
+  BinOp_bitxor,
+  BinOp_bitand,
+  BinOp_bitor,
+  BinOp_bitand_assign,
+  BinOp_bitxor_assign,
+  BinOp_bitor_assign,
+  BinOp_bitshift_left,
+  BinOp_bitshift_right,
 
-  opr_logand,
-  opr_logor,
+  BinOp_logand,
+  BinOp_logor,
 
-  opr_equals,
-  opr_nequal,
-  opr_less,
-  opr_greater,
-  opr_less_eql,
-  opr_greater_eql,
+  BinOp_equals,
+  BinOp_not_equal,
+  BinOp_less,
+  BinOp_greater,
+  BinOp_less_eql,
+  BinOp_greater_eql,
 
-  opr_assignment,
-  opr_add_assign,
-  opr_subtract_assign,
-  opr_multiply_assign,
-  opr_divide_assign,
-  opr_modulus_assign
+  BinOp_assign,
+  BinOp_add_assign,
+  BinOp_subtract_assign,
+  BinOp_multiply_assign,
+  BinOp_divide_assign,
+  BinOp_modulus_assign
 };
 
-enum st_unary_operator {
-  un_opr_invalid = -1,
-  opr_lognot,
-  opr_negative,
-  opr_positive,
-  opr_bitcompl,
-  opr_increment,
-  opr_decrement,
+enum UnaryOp {
+  UnOp_invalid = -1,
+  UnOp_lognot,
+  UnOp_negative,
+  UnOp_positive,
+  UnOp_bitcompl,
+  UnOp_increment,
+  UnOp_decrement,
 };
 
-static std::map<std::string, st_binary_operator> binary_operators = {
-  { "**", opr_power },
-  { "*", opr_multiply },
-  { "/", opr_floor_divide },
-  { "\\", opr_divide },
-  { "%", opr_modulus },
-  { "+", opr_add },
-  { "-", opr_subtract },
+static std::map<std::string, BinaryOp> binary_operators = {
+  { "**", BinOp_power },
+  { "*", BinOp_multiply },
+  { "/", BinOp_floor_divide },
+  { "\\", BinOp_divide },
+  { "%", BinOp_modulus },
+  { "+", BinOp_add },
+  { "-", BinOp_subtract },
 
-  { "^", opr_bitxor },
-  { "&", opr_bitand },
-  { "|", opr_bitor },
-  { "<<", opr_bitshift_left },
-  { ">>", opr_bitshift_right },
+  { "^", BinOp_bitxor },
+  { "&", BinOp_bitand },
+  { "|", BinOp_bitor },
+  { "<<", BinOp_bitshift_left },
+  { ">>", BinOp_bitshift_right },
 
-  { "&&", opr_logand },
-  { "||", opr_logor },
-  { "==", opr_equals },
-  { "!=", opr_nequal },
+  { "&&", BinOp_logand },
+  { "||", BinOp_logor },
+  { "==", BinOp_equals },
+  { "!=", BinOp_not_equal },
 
-  { "<", opr_less },
-  { ">", opr_greater },
-  { "<=", opr_less_eql },
-  { ">=", opr_greater_eql },
+  { "<", BinOp_less },
+  { ">", BinOp_greater },
+  { "<=", BinOp_less_eql },
+  { ">=", BinOp_greater_eql },
 
-  { "=", opr_assignment },
-  { "+=", opr_add_assign },
-  { "-=", opr_subtract_assign },
-  { "*=", opr_multiply_assign },
-  { "/=", opr_divide_assign },
-  { "%=", opr_modulus_assign },
-  { "&=", opr_bitand_assign },
-  { "^=", opr_bitxor_assign },
-  { "|=", opr_bitor_assign }
+  { "=", BinOp_assign },
+  { "+=", BinOp_add_assign },
+  { "-=", BinOp_subtract_assign },
+  { "*=", BinOp_multiply_assign },
+  { "/=", BinOp_divide_assign },
+  { "%=", BinOp_modulus_assign },
+  { "&=", BinOp_bitand_assign },
+  { "^=", BinOp_bitxor_assign },
+  { "|=", BinOp_bitor_assign }
 };
 
-static std::map<std::string, st_unary_operator> unary_operators = {
-  { "!", opr_lognot },
-  { "+", opr_positive },
-  { "-", opr_negative },
-  { "~", opr_bitcompl },
-  { "++", opr_increment },
-  { "--", opr_decrement },
+static std::map<std::string, UnaryOp> unary_operators = {
+  { "!", UnOp_lognot },
+  { "+", UnOp_positive },
+  { "-", UnOp_negative },
+  { "~", UnOp_bitcompl },
+  { "++", UnOp_increment },
+  { "--", UnOp_decrement },
 };
 
-static std::map<st_binary_operator, int> precedence_map = {
-  { opr_power, 13 },
-  { opr_multiply, 12 },{ opr_divide, 12 },{ opr_floor_divide, 12 },{ opr_modulus, 12 },
-  { opr_add, 11 },{ opr_subtract, 11 },
-  { opr_bitshift_left, 10 },{ opr_bitshift_right, 10 },
-  { opr_greater, 9 },{ opr_greater_eql, 9 },{ opr_less, 9 },{ opr_less_eql, 9 },
-  { opr_equals, 8 },{ opr_nequal, 8 },
-  { opr_bitand, 7 },
-  { opr_bitxor, 6 },
-  { opr_bitor, 5 },
-  { opr_logand, 4 },
-  { opr_logor, 3 },
-  { opr_assignment, 2 },
-  { opr_add_assign, 2 },{ opr_subtract_assign, 2 },
-  { opr_multiply_assign, 2 },{ opr_divide_assign, 2 },{ opr_modulus_assign, 2 },
-  { opr_bitand_assign, 2 },{ opr_bitxor_assign, 2 },{ opr_bitor_assign, 2 }
+static std::map<BinaryOp, int> precedence_map = {
+  { BinOp_power, 13 },
+  { BinOp_multiply, 12 },{ BinOp_divide, 12 },{ BinOp_floor_divide, 12 },{ BinOp_modulus, 12 },
+  { BinOp_add, 11 },{ BinOp_subtract, 11 },
+  { BinOp_bitshift_left, 10 },{ BinOp_bitshift_right, 10 },
+  { BinOp_greater, 9 },{ BinOp_greater_eql, 9 },{ BinOp_less, 9 },{ BinOp_less_eql, 9 },
+  { BinOp_equals, 8 },{ BinOp_not_equal, 8 },
+  { BinOp_bitand, 7 },
+  { BinOp_bitxor, 6 },
+  { BinOp_bitor, 5 },
+  { BinOp_logand, 4 },
+  { BinOp_logor, 3 },
+  { BinOp_assign, 2 },
+  { BinOp_add_assign, 2 },{ BinOp_subtract_assign, 2 },
+  { BinOp_multiply_assign, 2 },{ BinOp_divide_assign, 2 },{ BinOp_modulus_assign, 2 },
+  { BinOp_bitand_assign, 2 },{ BinOp_bitxor_assign, 2 },{ BinOp_bitor_assign, 2 }
 };
 
-inline const std::string &bin_opr_tostr(st_binary_operator op) {
+static const std::string &BinaryOp_ToString(BinaryOp op) {
   auto it = find_if(binary_operators.begin(), binary_operators.end(),
-    [&op](const std::pair<std::string, st_binary_operator> &item) {
+    [&op](const std::pair<std::string, BinaryOp> &item) {
     return item.second == op;
   });
 
@@ -130,9 +130,9 @@ inline const std::string &bin_opr_tostr(st_binary_operator op) {
   return it->first;
 }
 
-inline const std::string &un_opr_tostr(st_unary_operator op) {
+static const std::string &UnaryOp_ToString(UnaryOp op) {
   auto it = find_if(unary_operators.begin(), unary_operators.end(),
-    [&op](const std::pair<std::string, st_unary_operator> &item) {
+    [&op](const std::pair<std::string, UnaryOp> &item) {
     return item.second == op;
   });
 
@@ -142,30 +142,30 @@ inline const std::string &un_opr_tostr(st_unary_operator op) {
   return it->first;
 }
 
-inline const st_binary_operator bin_opr_fromstr(const std::string &str) {
+static const BinaryOp BinaryOp_FromString(const std::string &str) {
   auto it = binary_operators.find(str);
   if (it == binary_operators.end()) {
-    return st_binary_operator::bin_opr_invalid;
+    return BinaryOp::BinOp_invalid;
   } else {
     return it->second;
   }
 }
 
-inline const st_unary_operator un_opr_fromstr(const std::string &str) {
+static const UnaryOp UnaryOp_FromString(const std::string &str) {
   auto it = unary_operators.find(str);
   if (it == unary_operators.end()) {
-    return st_unary_operator::un_opr_invalid;
+    return UnaryOp::UnOp_invalid;
   } else {
     return it->second;
   }
 }
 
-inline bool is_operator(const std::string &str) {
-  return un_opr_fromstr(str) != st_unary_operator::un_opr_invalid ||
-    bin_opr_fromstr(str) != st_binary_operator::bin_opr_invalid;
+static bool IsOperator(const std::string &str) {
+  return UnaryOp_FromString(str) != UnaryOp::UnOp_invalid ||
+    BinaryOp_FromString(str) != BinaryOp::BinOp_invalid;
 }
 
-inline int opr_precedence(st_binary_operator op) {
+static int BinaryOp_Precedence(BinaryOp op) {
   return precedence_map.at(op);
 }
 } // namespace avm

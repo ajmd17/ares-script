@@ -41,6 +41,7 @@ enum AstType {
   ast_type_function_expression,
   ast_type_function_call,
   ast_type_class_declaration,
+  ast_type_object_expression,
   ast_type_enum,
   ast_type_if_statement,
   ast_type_print,
@@ -48,6 +49,7 @@ enum AstType {
   ast_type_for_loop,
   ast_type_while_loop,
   ast_type_try_catch,
+  ast_type_range,
 };
 
 struct AstClass;
@@ -147,11 +149,11 @@ struct AstExpression : public AstNode {
 struct AstBinaryOp : public AstNode {
   std::unique_ptr<AstNode> left;
   std::unique_ptr<AstNode> right;
-  st_binary_operator op;
+  BinaryOp op;
 
   AstBinaryOp(SourceLocation location, AstNode *module,
     std::unique_ptr<AstNode> left, std::unique_ptr<AstNode> right,
-    st_binary_operator op)
+    BinaryOp op)
     : left(move(left)), right(move(right)), op(op),
     AstNode(location, module, ast_type_binop) {
   }
@@ -159,10 +161,10 @@ struct AstBinaryOp : public AstNode {
 
 struct AstUnaryOp : public AstNode {
   std::unique_ptr<AstNode> child;
-  st_unary_operator op;
+  UnaryOp op;
 
   AstUnaryOp(SourceLocation location, AstNode *module,
-    std::unique_ptr<AstNode> child, st_unary_operator op)
+    std::unique_ptr<AstNode> child, UnaryOp op)
     : child(move(child)), op(op),
     AstNode(location, module, ast_type_unop) {
   }
@@ -365,6 +367,16 @@ struct AstClass : public AstNode {
   }
 };
 
+struct AstObjectExpression : public AstNode {
+  std::vector<std::pair<std::string, std::unique_ptr<AstNode>>> members;
+
+  AstObjectExpression(SourceLocation location, AstNode *module,
+      std::vector<std::pair<std::string, std::unique_ptr<AstNode>>> members)
+    : members(std::move(members)),
+    AstNode(location, module, ast_type_object_expression) {
+  }
+};
+
 struct AstEnum : public AstNode {
   AVMString_t name;
   std::vector<std::pair<AVMString_t, std::unique_ptr<AstInteger>>> members;
@@ -454,6 +466,14 @@ struct AstTryCatch : public AstNode {
     catch_block(std::move(catch_block)),
     exception_object(std::move(exception_object)),
     AstNode(location, module, ast_type_try_catch) {
+  }
+};
+
+struct AstRange : public AstNode {
+  AVMInteger_t first, second;
+
+  AstRange(SourceLocation location, AstNode *module, AVMInteger_t first, AVMInteger_t second)
+    : first(first), second(second), AstNode(location, module, ast_type_range) {
   }
 };
 } // namespace avm

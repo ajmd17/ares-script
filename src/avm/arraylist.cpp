@@ -1,30 +1,31 @@
 #include <detail/arraylist.h>
 #include <detail/reference.h>
+#include <detail/vm_state.h>
 
 namespace avm {
-ArrayList::ArrayList() {
+Array::Array() {
 }
 
-void ArrayList::invoke(VMState *, uint32_t) {
+void Array::invoke(VMState *, uint32_t) {
   throw std::runtime_error("not a function");
 }
 
-Reference ArrayList::clone(Heap &heap) {
-  auto ref = Reference(*heap.AllocObject<ArrayList>());
+Reference Array::Clone(VMState *state) {
+  auto ref = Reference(*state->heap.AllocObject<Array>());
 
   // copy all members
   for (auto &&member : fields) {
-    ref.Ref()->AddFieldReference(member.first, member.second.Ref()->clone(heap));
+    ref.Ref()->AddFieldReference(state, member.first, member.second.Ref()->Clone(state));
   }
 
   return ref;
 }
 
-std::string ArrayList::ToString() const {
+std::string Array::ToString() const {
   return TypeString();
 }
 
-std::string ArrayList::TypeString() const {
-  return "arraylist";
+std::string Array::TypeString() const {
+  return "array";
 }
 } // namespace avm

@@ -5,32 +5,40 @@
 #include <exception>
 
 namespace avm {
-void Object::AddFieldReference(const AVMString_t &name, Reference ref) {
+bool Object::AddFieldReference(VMState *state, const AVMString_t &name, Reference ref) {
   auto it = std::find_if(fields.begin(), fields.end(),
     [&](const std::pair<AVMString_t, Reference> &it) {
     return it.first == name;
   });
   if (it != fields.end()) {
     throw std::runtime_error("Member already exists");
+    return false;
   }
   fields.push_back(std::make_pair(name, ref));
+  return true;
 }
 
-Reference Object::GetFieldReference(const AVMString_t &name) {
+bool Object::GetFieldReference(VMState *state, const AVMString_t &name, Reference &out) {
   auto it = std::find_if(fields.begin(), fields.end(),
     [&](const std::pair<AVMString_t, Reference> &it) {
     return it.first == name;
   });
   if (it != fields.end()) {
-    return it->second;
+    out = it->second;
+    return true;
   } else {
-    fields.push_back(std::make_pair(name, Reference()));
-    return fields.back().second;
+    state->HandleException(MemberNotFoundException(name));
+    return false;
   }
 }
 
-Reference Object::GetFieldReference(size_t index) {
-  return fields.at(index).second;
+bool Object::GetFieldReference(VMState *state, size_t index, Reference &out) {
+  if (index < fields.size()) {
+    out = fields[index].second;
+    return true;
+  } else {
+    return false;
+  }
 }
 
 void Object::Mark() {

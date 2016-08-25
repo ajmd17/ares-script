@@ -18,7 +18,6 @@ static const int AVM_LEVEL_GLOBAL = 0;
 class Frame {
 public:
   Frame();
-  ~Frame();
 
   bool GetLocal(const AVMString_t &name, Reference &out);
 
