@@ -102,6 +102,11 @@ public:
     state->frames[state->frame_level]->locals.push_back({ name, ref });
   }
 
+  void BindFunction(const AVMString_t &name, void(*ptr) (VMState*, Object*, Object*)) {
+    Reference ref(*state->heap.AllocObject<NativeFunc_TwoArgs>(ptr));
+    state->frames[state->frame_level]->locals.push_back({ name, ref });
+  }
+
 private:
   // GC Mark all objects
   void MarkObjects();

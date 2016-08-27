@@ -1,5 +1,1 @@
-﻿  rtlib.cpp
-c:\users\user\documents\areslangproject\include\avm\detail\variable.h(110): warning C4172: returning address of local variable or temporary: converted
-c:\users\user\documents\areslangproject\include\avm\detail\variable.h(110): warning C4172: returning address of local variable or temporary: converted
-c:\users\user\documents\areslangproject\include\avm\detail\variable.h(110): warning C4172: returning address of local variable or temporary: converted
-  AresLang.vcxproj -> C:\Users\User\Documents\AresLangProject\vs14\AresLang\Debug\AresLang.exe
+﻿  AresLang.vcxproj -> C:\Users\User\Documents\AresLangProject\vs14\AresLang\Debug\AresLang.exe

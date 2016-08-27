@@ -14,6 +14,27 @@
 namespace avm {
 static const int compiler_global_level = 0;
 
+struct Symbol {
+  // Pointer to ast node (declaration)
+  AstNode *node = nullptr;
+  // Original name before being mangled
+  std::string original_name;
+  // Is this an alias for another symbol?
+  bool is_alias = false;
+  // Is this a constant? (immutable)
+  bool is_const = false;
+  // Is this currently set to a literal?
+  bool is_literal = false;
+  // Current value (used when set to literal)
+  AstNode *current_value = nullptr;
+  // If it is an alias, it is an alias to what?
+  std::string alias_to;
+  // Is is a natively defined object?
+  bool is_native = false;
+  // Number of parameters required, if it is a native function
+  size_t nargs = 0;
+};
+
 struct CompilerState {
   enum LevelType {
     Level_default,
@@ -36,23 +57,6 @@ struct CompilerState {
     }
 
     std::vector<ExternalFunction> methods;
-  };
-
-  struct Symbol {
-    // Pointer to ast node
-    AstNode *node = nullptr;
-    // Original name before being mangled
-    std::string original_name;
-    // Is this an alias for another symbol?
-    bool is_alias = false;
-    // Is this a constant? (immutable)
-    bool is_const = false;
-    // If it is an alias, it is an alias to what?
-    std::string alias_to;
-    // Is is a natively defined object?
-    bool is_native = false;
-    // Number of parameters required, if it is a native function
-    size_t nargs = 0;
   };
 
   struct LevelInfo {

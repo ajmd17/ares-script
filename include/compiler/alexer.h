@@ -19,7 +19,7 @@ private:
 
   Token ReadNumberLiteral();
   Token ReadHexNumberLiteral();
-  Token ReadFloatLiteral();
+  Token ReadFloatLiteral(std::string &start);
   Token ReadStringLiteral();
   Token ReadMultistringLiteral();
   Token ReadIdentifier();

@@ -1,3 +1,26 @@
-﻿  function.cpp
-c:\users\user\documents\areslangproject\src\avm\function.cpp(23): warning C4244: 'argument': conversion from 'uint64_t' to 'unsigned long', possible loss of data
+﻿  arraylist.cpp
+  Generating Code...
+  Compiling...
+  variable.cpp
+c:\users\user\documents\areslangproject\src\avm\variable.cpp(119): warning C4244: '=': conversion from 'double' to 'avm::AVMInteger_t', possible loss of data
+  avm.cpp
+c:\users\user\documents\areslangproject\src\avm\avm.cpp(382): warning C4244: '=': conversion from 'uint64_t' to 'unsigned long', possible loss of data
+c:\users\user\documents\areslangproject\src\avm\avm.cpp(503): warning C4244: 'argument': conversion from 'avm::AVMInteger_t' to 'size_t', possible loss of data
+c:\users\user\documents\areslangproject\src\avm\avm.cpp(609): warning C4800: 'uint8_t': forcing value to bool 'true' or 'false' (performance warning)
+c:\users\user\documents\areslangproject\include\avm\detail\variable.h(113): warning C4800: 'avm::AVMInteger_t': forcing value to bool 'true' or 'false' (performance warning)
+  c:\users\user\documents\areslangproject\include\avm\detail\variable.h(96): note: see reference to function template instantiation 'bool avm::Variable::GetValue<Decayed,T>(void)' being compiled
+          with
+          [
+              T=bool
+          ]
+  c:\users\user\documents\areslangproject\src\avm\avm.cpp(307): note: see reference to function template instantiation 'T avm::Variable::Cast<bool>(void)' being compiled
+          with
+          [
+              T=bool
+          ]
+c:\users\user\documents\areslangproject\include\avm\detail\variable.h(115): warning C4800: 'avm::AVMFloat_t': forcing value to bool 'true' or 'false' (performance warning)
+  Generating Code...
+  Skipping... (no relevant changes detected)
+  function.cpp
+  check_args.cpp
   AresVM.vcxproj -> C:\Users\User\Documents\AresLangProject\vs14\AresLang\Debug\AresVM.lib

@@ -26,9 +26,6 @@ public:
     ptr = copy.second;
   }
 
-  ~Dynamic() {
-  }
-
   Dynamic &operator=(const Dynamic &other) {
     auto copy = other.holder->Clone();
     holder = std::move(copy.first);
@@ -86,8 +83,7 @@ private:
 
   template <typename T>
   struct DerivedHolder : public BaseHolder {
-    explicit DerivedHolder(T value) 
-      : value(value) {
+    explicit DerivedHolder(T value) : value(value) {
     }
 
     std::pair<std::unique_ptr<BaseHolder>, void*> Clone() {

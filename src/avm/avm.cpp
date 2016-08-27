@@ -499,9 +499,9 @@ void VMInstance::HandleInstruction(OpCode_t opcode) {
 
     try {
       Reference ref;
-      if (right_var->type == Variable::type_integer) {
+      if (right_var->type == Variable::Type_int) {
         left.Ref()->GetFieldReference(state, right_var->Cast<AVMInteger_t>(), ref);
-      } else if (right_var->type == Variable::type_string) {
+      } else if (right_var->type == Variable::Type_string) {
         left.Ref()->GetFieldReference(state, right_var->Cast<AVMString_t>(), ref);
       } else {
         throw "invalid index";
@@ -577,7 +577,7 @@ void VMInstance::HandleInstruction(OpCode_t opcode) {
           
       auto ref = Reference(*state->heap.AllocNull());
       auto var = new Variable(); /// \todo: Make a unique structure class
-      var->type = Variable::type_structure;
+      var->type = Variable::Type_struct;
       var->flags |= Object::FLAG_CONST;
       var->flags |= Object::FLAG_TEMPORARY;
 

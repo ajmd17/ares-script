@@ -53,6 +53,7 @@ enum AstType {
 };
 
 struct AstClass;
+class Symbol;
 
 struct AstNode {
 public:
@@ -242,7 +243,11 @@ struct AstVariable : public AstNode {
   /* ===== To be set by semantic analyzer ===== */
   bool is_alias = false;
   AstNode *alias_to = nullptr;
-  bool is_const = false; 
+  bool is_const = false;
+  // Is this symbol currently set to a literal? (float, string, int, etc.)
+  bool is_literal = false;
+  AstNode *current_value = nullptr;
+  Symbol *symbol_ptr = nullptr;
   /* ========================================== */
 
   AstVariable(SourceLocation location, AstNode *module, const AVMString_t &name)

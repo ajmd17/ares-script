@@ -8,7 +8,7 @@
 namespace avm {
 Variable::Variable() {
   value.Assign(nullptr);
-  type = type_null;
+  type = Type_none;
 }
 
 Variable::~Variable() {
@@ -24,6 +24,7 @@ Reference Variable::Clone(VMState *state) {
   auto var = new Variable();
   var->value = value;
   var->type = type;
+  var->stack_value = stack_value;
   ref.Ref() = var;
 
   // copy all members
@@ -37,22 +38,22 @@ Reference Variable::Clone(VMState *state) {
 }
 
 Variable &Variable::Add(VMState *state, Variable *other) {
-  if (type == type_string) {
+  if (type == Type_string) {
     auto &str1 = value.Get<AVMString_t&>();
     auto str2 = other->ToString();
 
     str1 = str1 + str2;
-  } else if ((type == type_integer) && (other->type == type_integer)) {
+  } else if ((type == Type_int) && (other->type == Type_int)) {
     auto &v1 = Cast<AVMInteger_t&>();
     auto v2 = other->Cast<AVMInteger_t>();
 
     v1 = v1 + v2;
-  } else if (type == type_float) {
+  } else if (type == Type_float) {
     auto &v1 = Cast<AVMFloat_t&>();
     auto v2 = other->Cast<AVMFloat_t>();
 
     v1 = v1 + v2;
-  } else if (other->type == type_float) {
+  } else if (other->type == Type_float) {
     auto v1 = Cast<AVMFloat_t>();
     auto &v2 = other->Cast<AVMFloat_t&>();
 
@@ -65,17 +66,17 @@ Variable &Variable::Add(VMState *state, Variable *other) {
 }
 
 Variable &Variable::Subtract(VMState *state, Variable *other) {
-  if ((type == type_integer) && (other->type == type_integer)) {
+  if ((type == Type_int) && (other->type == Type_int)) {
     auto &v1 = Cast<AVMInteger_t&>();
     auto v2 = other->Cast<AVMInteger_t>();
 
     v1 = v1 - v2;
-  } else if (type == type_float) {
+  } else if (type == Type_float) {
     auto &v1 = Cast<AVMFloat_t&>();
     auto v2 = other->Cast<AVMFloat_t>();
 
     v1 -= v2;
-  } else if (other->type == type_float) {
+  } else if (other->type == Type_float) {
     auto v1 = Cast<AVMFloat_t>();
     auto &v2 = other->Cast<AVMFloat_t&>();
 
@@ -88,17 +89,17 @@ Variable &Variable::Subtract(VMState *state, Variable *other) {
 }
 
 Variable &Variable::Multiply(VMState *state, Variable *other) {
-  if ((type == type_integer) && (other->type == type_integer)) {
+  if ((type == Type_int) && (other->type == Type_int)) {
     auto &v1 = Cast<AVMInteger_t&>();
     auto v2 = other->Cast<AVMInteger_t>();
 
     v1 = v1 * v2;
-  } else if (type == type_float) {
+  } else if (type == Type_float) {
     auto &v1 = Cast<AVMFloat_t&>();
     auto v2 = other->Cast<AVMFloat_t>();
 
     v1 *= v2;
-  } else if (other->type == type_float) {
+  } else if (other->type == Type_float) {
     auto v1 = Cast<AVMFloat_t>();
     auto &v2 = other->Cast<AVMFloat_t&>();
 
@@ -111,17 +112,17 @@ Variable &Variable::Multiply(VMState *state, Variable *other) {
 }
 
 Variable &Variable::Power(VMState *state, Variable *other) {
-  if ((type == type_integer) && (other->type == type_integer)) {
+  if ((type == Type_int) && (other->type == Type_int)) {
     auto &v1 = Cast<AVMInteger_t&>();
     auto v2 = other->Cast<AVMInteger_t>();
 
     v1 = std::pow(v1, v2);
-  } else if (type == type_float) {
+  } else if (type == Type_float) {
     auto &v1 = Cast<AVMFloat_t&>();
     auto v2 = other->Cast<AVMFloat_t>();
 
     v1 = std::pow(v1, v2);
-  } else if (other->type == type_float) {
+  } else if (other->type == Type_float) {
     auto v1 = Cast<AVMFloat_t>();
     auto &v2 = other->Cast<AVMFloat_t&>();
 
@@ -134,17 +135,17 @@ Variable &Variable::Power(VMState *state, Variable *other) {
 }
 
 Variable &Variable::Divide(VMState *state, Variable *other) {
-  if ((type == type_integer) && (other->type == type_integer)) {
+  if ((type == Type_int) && (other->type == Type_int)) {
     auto &v1 = Cast<AVMInteger_t&>();
     auto v2 = other->Cast<AVMInteger_t>();
 
     v1 = v1 / v2;
-  } else if (type == type_float) {
+  } else if (type == Type_float) {
     auto &v1 = Cast<AVMFloat_t&>();
     auto v2 = other->Cast<AVMFloat_t>();
 
     v1 /= v2;
-  } else if (other->type == type_float) {
+  } else if (other->type == Type_float) {
     auto v1 = Cast<AVMFloat_t>();
     auto &v2 = other->Cast<AVMFloat_t&>();
 
@@ -157,7 +158,7 @@ Variable &Variable::Divide(VMState *state, Variable *other) {
 }
 
 Variable &Variable::Modulus(VMState *state, Variable *other) {
-  if ((type == type_integer) && (other->type == type_integer)) {
+  if ((type == Type_int) && (other->type == Type_int)) {
     auto &v1 = Cast<AVMInteger_t&>();
     auto v2 = other->Cast<AVMInteger_t>();
 
@@ -170,7 +171,7 @@ Variable &Variable::Modulus(VMState *state, Variable *other) {
 }
 
 Variable &Variable::BitwiseXor(VMState *state, Variable *other) {
-  if ((type == type_integer) && (other->type == type_integer)) {
+  if ((type == Type_int) && (other->type == Type_int)) {
     auto &v1 = Cast<AVMInteger_t&>();
     auto v2 = other->Cast<AVMInteger_t>();
 
@@ -183,7 +184,7 @@ Variable &Variable::BitwiseXor(VMState *state, Variable *other) {
 }
 
 Variable &Variable::BitwiseAnd(VMState *state, Variable *other) {
-  if ((type == type_integer) && (other->type == type_integer)) {
+  if ((type == Type_int) && (other->type == Type_int)) {
     auto &v1 = Cast<AVMInteger_t&>();
     auto v2 = other->Cast<AVMInteger_t>();
 
@@ -196,7 +197,7 @@ Variable &Variable::BitwiseAnd(VMState *state, Variable *other) {
 }
 
 Variable &Variable::BitwiseOr(VMState *state, Variable *other) {
-  if ((type == type_integer) && (other->type == type_integer)) {
+  if ((type == Type_int) && (other->type == Type_int)) {
     auto &v1 = Cast<AVMInteger_t&>();
     auto v2 = other->Cast<AVMInteger_t>();
 
@@ -209,7 +210,7 @@ Variable &Variable::BitwiseOr(VMState *state, Variable *other) {
 }
 
 Variable &Variable::LeftShift(VMState *state, Variable *other) {
-  if ((type == type_integer) && (other->type == type_integer)) {
+  if ((type == Type_int) && (other->type == Type_int)) {
     auto &v1 = Cast<AVMInteger_t&>();
     auto v2 = other->Cast<AVMInteger_t>();
 
@@ -222,7 +223,7 @@ Variable &Variable::LeftShift(VMState *state, Variable *other) {
 }
 
 Variable &Variable::RightShift(VMState *state, Variable *other) {
-  if ((type == type_integer) && (other->type == type_integer)) {
+  if ((type == Type_int) && (other->type == Type_int)) {
     auto &v1 = Cast<AVMInteger_t&>();
     auto v2 = other->Cast<AVMInteger_t>();
 
@@ -236,7 +237,7 @@ Variable &Variable::RightShift(VMState *state, Variable *other) {
 }
 
 Variable &Variable::LogicalAnd(VMState *state, Variable *other) {
-  if ((type == type_integer) && (other->type == type_integer)) {
+  if ((type == Type_int) && (other->type == Type_int)) {
     auto &v1 = Cast<AVMInteger_t&>();
     auto v2 = other->Cast<AVMInteger_t>();
 
@@ -249,7 +250,7 @@ Variable &Variable::LogicalAnd(VMState *state, Variable *other) {
 }
 
 Variable &Variable::LogicalOr(VMState *state, Variable *other) {
-  if ((type == type_integer) && (other->type == type_integer)) {
+  if ((type == Type_int) && (other->type == Type_int)) {
     auto &v1 = Cast<AVMInteger_t&>();
     auto v2 = other->Cast<AVMInteger_t>();
 
@@ -262,24 +263,24 @@ Variable &Variable::LogicalOr(VMState *state, Variable *other) {
 }
 
 Variable &Variable::Equals(VMState *state, Variable *other) {
-  if (other->type == type_null) {
-    SetValue(AVMInteger_t(type == type_null));
-  } else if ((type == type_integer) && (other->type == type_integer)) {
+  if (other->type == Type_none) {
+    SetValue(AVMInteger_t(type == Type_none));
+  } else if ((type == Type_int) && (other->type == Type_int)) {
     auto &v1 = Cast<AVMInteger_t&>();
     auto v2 = other->Cast<AVMInteger_t>();
 
     v1 = v1 == v2;
-  } else if (type == type_float) {
+  } else if (type == Type_float) {
     auto &v1 = Cast<AVMFloat_t&>();
     auto v2 = other->Cast<AVMFloat_t>();
 
     SetValue(AVMInteger_t(v1 == v2));
-  } else if (other->type == type_float) {
+  } else if (other->type == Type_float) {
     auto v1 = Cast<AVMFloat_t>();
     auto &v2 = other->Cast<AVMFloat_t&>();
 
     SetValue(AVMInteger_t(v1 == v2));
-  } else if ((type == type_string) && (other->type == type_string)) {
+  } else if ((type == Type_string) && (other->type == Type_string)) {
     auto &str1 = value.Get<AVMString_t&>();
     auto &str2 = other->value.Get<AVMString_t&>();
 
@@ -292,24 +293,24 @@ Variable &Variable::Equals(VMState *state, Variable *other) {
 }
 
 Variable &Variable::NotEqual(VMState *state, Variable *other) {
-  if (other->type == type_null) {
-    SetValue(AVMInteger_t(type != type_null));
-  } if ((type == type_integer) && (other->type == type_integer)) {
+  if (other->type == Type_none) {
+    SetValue(AVMInteger_t(type != Type_none));
+  } if ((type == Type_int) && (other->type == Type_int)) {
     auto &v1 = Cast<AVMInteger_t&>();
     auto v2 = other->Cast<AVMInteger_t>();
 
     SetValue(AVMInteger_t(v1 != v2));
-  } else if (type == type_float) {
+  } else if (type == Type_float) {
     auto &v1 = Cast<AVMInteger_t&>();
     auto v2 = other->Cast<AVMFloat_t>();
 
     SetValue(AVMInteger_t(v1 != v2));
-  } else if (other->type == type_float) {
+  } else if (other->type == Type_float) {
     auto v1 = Cast<AVMFloat_t>();
     auto &v2 = other->Cast<AVMFloat_t&>();
 
     SetValue(AVMInteger_t(v1 != v2));
-  } else if ((type == type_string) && (other->type == type_string)) {
+  } else if ((type == Type_string) && (other->type == Type_string)) {
     auto &str1 = value.Get<AVMString_t&>();
     auto &str2 = other->value.Get<AVMString_t&>();
 
@@ -322,22 +323,22 @@ Variable &Variable::NotEqual(VMState *state, Variable *other) {
 }
 
 Variable &Variable::Less(VMState *state, Variable *other) {
-  if ((type == type_integer) && (other->type == type_integer)) {
+  if ((type == Type_int) && (other->type == Type_int)) {
     auto &v1 = Cast<AVMInteger_t&>();
     auto v2 = other->Cast<AVMInteger_t>();
 
     SetValue(AVMInteger_t(v1 < v2));
-  } else if (type == type_float) {
+  } else if (type == Type_float) {
     auto &v1 = Cast<AVMFloat_t&>();
     auto v2 = other->Cast<AVMFloat_t>();
 
     SetValue(AVMInteger_t(v1 < v2));
-  } else if (other->type == type_float) {
+  } else if (other->type == Type_float) {
     auto v1 = Cast<AVMFloat_t>();
     auto &v2 = other->Cast<AVMFloat_t&>();
 
     SetValue(AVMInteger_t(v1 < v2));
-  } else if ((type == type_string) && (other->type == type_string)) {
+  } else if ((type == Type_string) && (other->type == Type_string)) {
     auto &str1 = value.Get<AVMString_t&>();
     auto &str2 = other->value.Get<AVMString_t&>();
 
@@ -350,22 +351,22 @@ Variable &Variable::Less(VMState *state, Variable *other) {
 }
 
 Variable &Variable::Greater(VMState *state, Variable *other) {
-  if ((type == type_integer) && (other->type == type_integer)) {
+  if ((type == Type_int) && (other->type == Type_int)) {
     auto &v1 = Cast<AVMInteger_t&>();
     auto v2 = other->Cast<AVMInteger_t>();
 
     SetValue(AVMInteger_t(v1 > v2));
-  } else if (type == type_float) {
+  } else if (type == Type_float) {
     auto &v1 = Cast<AVMFloat_t&>();
     auto v2 = other->Cast<AVMFloat_t>();
 
     SetValue(AVMInteger_t(v1 > v2));
-  } else if (other->type == type_float) {
+  } else if (other->type == Type_float) {
     auto v1 = Cast<AVMFloat_t>();
     auto &v2 = other->Cast<AVMFloat_t&>();
     
     SetValue(AVMInteger_t(v1 > v2));
-  } else if ((type == type_string) && (other->type == type_string)) {
+  } else if ((type == Type_string) && (other->type == Type_string)) {
     auto &str1 = value.Get<AVMString_t&>();
     auto &str2 = other->value.Get<AVMString_t&>();
 
@@ -378,22 +379,22 @@ Variable &Variable::Greater(VMState *state, Variable *other) {
 }
 
 Variable &Variable::LessOrEqual(VMState *state, Variable *other) {
-  if ((type == type_integer) && (other->type == type_integer)) {
+  if ((type == Type_int) && (other->type == Type_int)) {
     auto &v1 = Cast<AVMInteger_t&>();
     auto v2 = other->Cast<AVMInteger_t>();
 
     SetValue(AVMInteger_t(v1 <= v2));
-  } else if (type == type_float) {
+  } else if (type == Type_float) {
     auto &v1 = Cast<AVMFloat_t&>();
     auto v2 = other->Cast<AVMFloat_t>();
 
     SetValue(AVMInteger_t(v1 <= v2));
-  } else if (other->type == type_float) {
+  } else if (other->type == Type_float) {
     auto v1 = Cast<AVMFloat_t>();
     auto &v2 = other->Cast<AVMFloat_t&>();
 
     SetValue(AVMInteger_t(v1 <= v2));
-  } else if ((type == type_string) && (other->type == type_string)) {
+  } else if ((type == Type_string) && (other->type == Type_string)) {
     auto &str1 = value.Get<AVMString_t&>();
     auto &str2 = other->value.Get<AVMString_t&>();
 
@@ -406,22 +407,22 @@ Variable &Variable::LessOrEqual(VMState *state, Variable *other) {
 }
 
 Variable &Variable::GreaterOrEqual(VMState *state, Variable *other) {
-  if ((type == type_integer) && (other->type == type_integer)) {
+  if ((type == Type_int) && (other->type == Type_int)) {
     auto &v1 = Cast<AVMInteger_t&>();
     auto v2 = other->Cast<AVMInteger_t>();
 
     SetValue(AVMInteger_t(v1 >= v2));
-  } else if (type == type_float) {
+  } else if (type == Type_float) {
     auto &v1 = Cast<AVMFloat_t&>();
     auto v2 = other->Cast<AVMFloat_t>();
 
     SetValue(AVMInteger_t(v1 >= v2));
-  } else if (other->type == type_float) {
+  } else if (other->type == Type_float) {
     auto v1 = Cast<AVMFloat_t>();
     auto &v2 = other->Cast<AVMFloat_t&>();
 
     SetValue(AVMInteger_t(v1 >= v2));
-  } else if ((type == type_string) && (other->type == type_string)) {
+  } else if ((type == Type_string) && (other->type == Type_string)) {
     auto &str1 = value.Get<AVMString_t&>();
     auto &str2 = other->value.Get<AVMString_t&>();
 
@@ -434,13 +435,13 @@ Variable &Variable::GreaterOrEqual(VMState *state, Variable *other) {
 }
 
 Variable &Variable::LogicalNot(VMState *state) {
-  if (type == type_null) {
+  if (type == Type_none) {
     SetValue(1);
-  } else if (type == type_integer) {
+  } else if (type == Type_int) {
     auto &v1 = Cast<AVMInteger_t&>();
 
     v1 = !v1;
-  } else if (type == type_float) {
+  } else if (type == Type_float) {
     auto &v1 = Cast<AVMFloat_t&>();
 
     v1 = !v1;
@@ -452,11 +453,11 @@ Variable &Variable::LogicalNot(VMState *state) {
 }
 
 Variable &Variable::Negate(VMState *state) {
-  if (type == type_integer) {
+  if (type == Type_int) {
     auto &v1 = Cast<AVMInteger_t&>();
 
     v1 = -v1;
-  } else if (type == type_float) {
+  } else if (type == Type_float) {
     auto &v1 = Cast<AVMFloat_t&>();
 
     v1 = -v1;
@@ -469,11 +470,11 @@ Variable &Variable::Negate(VMState *state) {
 
 /// \todo actually add pre and post incrementing
 Variable &Variable::PreIncrement(VMState *state) {
-  if (type == type_integer) {
+  if (type == Type_int) {
     auto &v1 = Cast<AVMInteger_t&>();
 
     v1++;
-  } else if (type == type_float) {
+  } else if (type == Type_float) {
     auto &v1 = Cast<AVMFloat_t&>();
 
     v1++;
@@ -485,11 +486,11 @@ Variable &Variable::PreIncrement(VMState *state) {
 }
 
 Variable &Variable::PreDecrement(VMState *state) {
-  if (type == type_integer) {
+  if (type == Type_int) {
     auto &v1 = Cast<AVMInteger_t&>();
 
     v1--;
-  } else if (type == type_float) {
+  } else if (type == Type_float) {
     auto &v1 = Cast<AVMFloat_t&>();
 
     v1--;
@@ -510,13 +511,13 @@ Variable &Variable::PostDecrement(VMState *state) {
 
 std::string Variable::ToString() const {
   switch (type) {
-  case type_integer:
-    return util::to_string(value.Get<AVMInteger_t>());
-  case type_float:
-    return util::to_string(value.Get<AVMFloat_t>());
-  case type_string:
+  case Type_int:
+    return util::to_string(stack_value.int_value);
+  case Type_float:
+    return util::to_string(stack_value.float_value);
+  case Type_string:
     return value.Get<AVMString_t>();
-  case type_structure:
+  case Type_struct:
   {
     std::string result = "{ ";
     for (size_t i = 0; i < fields.size(); i++) {
@@ -536,17 +537,17 @@ std::string Variable::ToString() const {
 
 std::string Variable::TypeString() const {
   switch (type) {
-  case type_null:
+  case Type_none:
     return "null";
-  case type_integer:
+  case Type_int:
     return "int";
-  case type_float:
+  case Type_float:
     return "float";
-  case type_string:
+  case Type_string:
     return "string";
-  case type_structure:
+  case Type_struct:
     return "structure";
-  case type_native:
+  case Type_native:
     return std::string("native ") + value.TypeInfo().name();
   default:
     return value.TypeInfo().name();

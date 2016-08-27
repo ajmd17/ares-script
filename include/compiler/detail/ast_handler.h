@@ -255,7 +255,7 @@ private:
     case UnOp_positive:
       return std::move(std::unique_ptr<ReturnTypeAst>(new ReturnTypeAst(a->location, a->module, static_cast<ReturnValueType>(left->value))));
     case UnOp_negative:
-      return std::move(std::unique_ptr<ReturnTypeAst>(new ReturnTypeAst(a->location, a->module, -1 * static_cast<ReturnValueType>(left->value))));
+      return std::move(std::unique_ptr<ReturnTypeAst>(new ReturnTypeAst(a->location, a->module, -static_cast<ReturnValueType>(left->value))));
     default:
       return nullptr;
     }

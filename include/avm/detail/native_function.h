@@ -132,6 +132,39 @@ private:
   FuncType ptr;
 };
 
+class NativeFunc_TwoArgs : public NativeFunc {
+public:
+  typedef void(*FuncType) (VMState*, Object*, Object*); //ReturnType(*FuncType) (T1);
+
+  NativeFunc_TwoArgs(FuncType ptr)
+    : ptr(ptr), NativeFunc(2) {
+  }
+
+  void invoke(VMState *state, uint32_t callargs) {
+    if (CheckArgs(state, nargs, callargs)) {
+      bool error = false;
+      Object *args[2];
+      for (int i = nargs - 1; i >= 0; i--) {
+        Reference ref = state->stack.back(); state->stack.pop_back();
+        args[i] = ref.Ref();
+      }
+      ptr(state, args[0], args[1]);
+    }
+  }
+
+  Reference Clone(VMState *state) {
+    return Reference(*state->heap.AllocObject<NativeFunc_TwoArgs>(ptr));
+  }
+
+  std::string TypeString() const {
+    std::string result("native function");
+    return result;
+  }
+
+private:
+  FuncType ptr;
+};
+
 /*template <typename ReturnType, typename T1, typename T2>
 class NativeFunc_TwoArgs : public NativeFunc {
 public:

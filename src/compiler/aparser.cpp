@@ -145,13 +145,30 @@ Token *Parser::ExpectRead(TokenType type, const std::string &str) {
 }
 
 int Parser::OpPrecedence() {
+  BinaryOp op = BinOp_invalid;
+
   auto *current = Peek();
-  if (!(current && current->type == Token_operator)) {
+  if (!current) {
     return -1;
+  } else {
+    if (current->type == Token_operator) {
+      op = BinaryOp_FromString(current->value);
+    } else {
+      if (current->value == Keyword_ToString(Keyword_is)) {
+        op = BinOp_equals;
+      } else if (current->value == Keyword_ToString(Keyword_not)) {
+        op = BinOp_not_equal;
+      } else if (current->value == Keyword_ToString(Keyword_and)) {
+        op = BinOp_logand;
+      } else if (current->value == Keyword_ToString(Keyword_or)) {
+        op = BinOp_logor;
+      } else {
+        return -1;
+      }
+    }
   }
 
-  BinaryOp op = BinaryOp_FromString(current->value);
-  if (op == BinaryOp::BinOp_invalid) {
+  if (op == BinOp_invalid) {
     ErrorMsg(msg_illegal_operator, current->location, current->value);
   }
   return BinaryOp_Precedence(op);
@@ -241,8 +258,7 @@ std::unique_ptr<AstNode> Parser::ParseStatement() {
         before->type == Token_period ||
         before->type == Token_right_arrow ||
         before->type == Token_left_arrow)) {
-
-      SourceLocation loc(before->location.line, 
+      SourceLocation loc(before->location.line,
         before->location.column + before->value.length(), before->location.file);
       WarningMsg(msg_expected_semicolon, loc);
     }
@@ -438,9 +454,29 @@ std::unique_ptr<AstNode> Parser::ParseBinaryOp(int expr_prec, std::unique_ptr<As
     if (tok_prec < expr_prec)
       return left;
 
-    Token *tok = ExpectRead(Token_operator);
-    BinaryOp op = BinaryOp_FromString(tok->value);
-    if (op == BinaryOp::BinOp_invalid) {
+    Token *tok = nullptr;
+    BinaryOp op = BinOp_invalid;
+
+    if (Match(Token_keyword, Keyword_ToString(Keyword_is))) {
+      tok = Read();
+      if (MatchRead(Token_keyword, Keyword_ToString(Keyword_not))) {
+        // "is not"
+        op = BinOp_not_equal;
+      } else {
+        op = BinOp_equals;
+      }
+    } else if (Match(Token_keyword, Keyword_ToString(Keyword_and))) {
+      tok = Read();
+      op = BinOp_logand;
+    } else if (Match(Token_keyword, Keyword_ToString(Keyword_or))) {
+      tok = Read();
+      op = BinOp_logor;
+    } else {
+      tok = ExpectRead(Token_operator);
+      op = BinaryOp_FromString(tok->value);
+    }
+
+    if (op == BinOp_invalid) {
       ErrorMsg(msg_illegal_operator, tok->location, tok->value);
     }
 
@@ -500,20 +536,20 @@ std::unique_ptr<AstNode> Parser::ParseObjectExpression() {
 
   ExpectRead(Token_open_brace);
   do {
-      Token *ident = nullptr;
-      if (MatchRead(Token_identifier, ident)) {
-          if (MatchRead(Token_operator, BinaryOp_ToString(BinOp_assign)) || MatchRead(Token_colon)) {
-              auto value = ParseExpression();
-              members.push_back({ ident->value, std::move(value) });
-          }
-      } else {
-          break;
+    Token *ident = nullptr;
+    if (MatchRead(Token_identifier, ident)) {
+      if (MatchRead(Token_operator, BinaryOp_ToString(BinOp_assign)) || MatchRead(Token_colon)) {
+        auto value = ParseExpression();
+        members.push_back({ ident->value, std::move(value) });
       }
+    } else {
+      break;
+    }
   } while (MatchRead(Token_comma));
   ExpectRead(Token_close_brace);
 
   return std::move(std::unique_ptr<AstObjectExpression>(
-      new AstObjectExpression(tok->location, main_module, std::move(members))));
+    new AstObjectExpression(tok->location, main_module, std::move(members))));
 }
 
 std::unique_ptr<AstNode> Parser::ParseEnum() {
@@ -528,13 +564,13 @@ std::unique_ptr<AstNode> Parser::ParseEnum() {
     if (MatchRead(Token_close_brace)) {
       break;
     }
-    
+
     Token *key = ExpectRead(Token_identifier);
     if (MatchRead(Token_operator, BinaryOp_ToString(BinOp_assign)) || MatchRead(Token_colon)) {
       Token *value = ExpectRead(Token_integer);
       start_value = atoi(value->value.c_str());
     }
-    members.push_back({key->value, std::unique_ptr<AstInteger>(new AstInteger(key->location, main_module, start_value))});
+    members.push_back({ key->value, std::unique_ptr<AstInteger>(new AstInteger(key->location, main_module, start_value)) });
     ++start_value;
 
     if (MatchRead(Token_close_brace) || !ExpectRead(Token_comma)) {
@@ -542,16 +578,13 @@ std::unique_ptr<AstNode> Parser::ParseEnum() {
     }
   }
 
-  return std::move(std::unique_ptr<AstEnum>(new AstEnum(tok->location, 
+  return std::move(std::unique_ptr<AstEnum>(new AstEnum(tok->location,
     main_module, ident->value, std::move(members))));
 }
 
 std::unique_ptr<AstNode> Parser::ParseParenthesis() {
-  Read();
+  ExpectRead(Token_open_parenthesis);
   auto expr = ParseExpression();
-  if (!expr) {
-    return nullptr;
-  }
   ExpectRead(Token_close_parenthesis);
   return expr;
 }
@@ -595,8 +628,7 @@ std::unique_ptr<AstNode> Parser::ParseIdentifier() {
       before->type == Token_colon ||
       before->type == Token_comma ||
       before->type == Token_right_arrow)) {
-      
-    SourceLocation loc(before->location.line, 
+    SourceLocation loc(before->location.line,
       before->location.column + before->value.length(), before->location.file);
     WarningMsg(msg_expected_semicolon, loc);
   }
@@ -771,8 +803,11 @@ std::unique_ptr<AstNode> Parser::ParseTerm() {
     term = move(ParseRange());
   else if (Match(Token_operator))
     term = move(ParseUnaryOp());
-  else
-    ErrorMsg(msg_unexpected_token, Location(), Read()->value);
+  else {
+    Token *bad = Read();
+    ErrorMsg(msg_unexpected_token, bad->location, bad->value);
+    return nullptr;
+  }
 
   return term;
 }
@@ -782,11 +817,11 @@ std::unique_ptr<AstNode> Parser::ParseExpression(bool pop_after) {
   if (!term) {
     return nullptr;
   }
-  if (pop_after) {
-      std::cout << "line: " << term->location.line << " pop stack\n";
-  }
 
-  if (Match(Token_operator)) {
+  if (Match(Token_operator) ||
+    Match(Token_keyword, Keyword_ToString(Keyword_is)) ||
+    Match(Token_keyword, Keyword_ToString(Keyword_and)) ||
+    Match(Token_keyword, Keyword_ToString(Keyword_or))) {
     // parse binary expression
     auto bin_op = ParseBinaryOp(0, std::move(term));
     if (!bin_op) {
@@ -1079,48 +1114,128 @@ std::unique_ptr<AstNode> Parser::ParseForLoop() {
   return std::unique_ptr<AstForLoop>(new AstForLoop(tok->location, main_module,
       std::move(ident->value), std::move(range), std::move(loop_block)));*/
 
+  enum {
+    ForLoop_classic,
+    ForLoop_modern,
+  } for_loop_type = ForLoop_classic;
+
+  std::unique_ptr<AstNode> init_expr = nullptr;
+  std::unique_ptr<AstNode> cond_expr = nullptr;
+  std::unique_ptr<AstNode> inc_expr = nullptr;
+
   bool has_parenthesis = MatchRead(Token_open_parenthesis);
 
-  // read initializer
-  std::unique_ptr<AstNode> init_expr = nullptr;
-  if (!MatchRead(Token_semicolon)) {
-    init_expr = ParseStatement();
+  if (Match(Token_identifier)) {
+    // modern for loops just start with identifier name
+    for_loop_type = ForLoop_modern;
   }
 
-  // read conditional
-  std::unique_ptr<AstNode> cond_expr = nullptr;
-  if (MatchRead(Token_semicolon)) {
-    cond_expr = std::unique_ptr<AstTrue>(new AstTrue(Location(), main_module));
-  } else {
-    cond_expr = ParseExpression();
-    ExpectRead(Token_semicolon);
-  }
+  if (for_loop_type == ForLoop_classic) {
+    // read initializer
+    if (!MatchRead(Token_semicolon)) {
+      init_expr = ParseStatement();
+    }
 
-  // read increment
-  std::unique_ptr<AstNode> inc_expr = nullptr;
-  if (!Match(Token_open_brace)) {
-    inc_expr = ParseExpression();
+    // read conditional
+    if (MatchRead(Token_semicolon)) {
+      cond_expr = std::unique_ptr<AstTrue>(new AstTrue(Location(), main_module));
+    } else {
+      cond_expr = ParseExpression();
+      ExpectRead(Token_semicolon);
+    }
+
+    // read increment
+    if (!Match(Token_open_brace)) {
+      inc_expr = ParseExpression();
+    }
+  } else if (for_loop_type == ForLoop_modern) {
+    AVMInteger_t /*start_value = 0, end_value = 0,*/ step_value = 1;
+
+    // read identifier and initializer
+    Token *ident_tk = Read();
+    std::string ident_name = ident_tk->value;
+    std::unique_ptr<AstNode> assignment = nullptr;
+
+    // read assignment (if there is one, else set to zero)
+    if (MatchRead(Token_operator, BinaryOp_ToString(BinOp_assign)) || MatchRead(Token_colon)) {
+      assignment = ParseExpression();
+      /*auto start_ast = ParseIntegerLiteral();
+      if (start_ast != nullptr) {
+        start_value = static_cast<AstInteger*>(start_ast.get())->value;
+      }*/
+    } else {
+      // start_value = 0;
+      assignment = std::unique_ptr<AstInteger>(new AstInteger(Location(), main_module, 0 /*default start value*/));
+    }
+
+    init_expr = std::unique_ptr<AstVariableDeclaration>(new AstVariableDeclaration(ident_tk->location, main_module,
+      ident_name, std::move(assignment), false));
+
+    ExpectRead(Token_comma);
+
+    /*auto end_ast = ParseIntegerLiteral();
+    if (end_ast != nullptr) {
+      end_value = static_cast<AstInteger*>(end_ast.get())->value;
+    }*/
+
+    auto expr = /*std::unique_ptr<AstInteger>(new AstInteger(Location(), main_module, end_value));*/ParseExpression();
+    auto expr_location = expr->location;
+
+    auto left = std::unique_ptr<AstVariable>(new AstVariable(expr->location, main_module, ident_name));
+
+    if (MatchRead(Token_comma)) {
+      // optional step value
+      std::stringstream ss;
+
+      auto first = Peek();
+      while (Peek() &&
+        Peek()->type == Token_integer ||
+        Peek()->type == Token_float ||
+        Peek()->type == Token_operator) {
+        ss << Read()->value;
+      }
+
+      if (!(ss >> step_value)) {
+        ErrorMsg(msg_illegal_syntax, first->location);
+        step_value = 1;
+      }
+    }
+
+    if (step_value < 0) {
+      // negative will compare backwards
+      cond_expr = std::unique_ptr<AstBinaryOp>(new AstBinaryOp(tok->location, main_module,
+        std::move(left), std::move(expr), BinOp_greater));
+    } else {
+      cond_expr = std::unique_ptr<AstBinaryOp>(new AstBinaryOp(tok->location, main_module,
+        std::move(left), std::move(expr), BinOp_less));
+    }
+
+    auto step = std::unique_ptr<AstInteger>(new AstInteger(Location(), main_module, step_value));
+
+    inc_expr = std::unique_ptr<AstBinaryOp>(new AstBinaryOp(tok->location, main_module,
+      std::unique_ptr<AstVariable>(new AstVariable(expr_location, main_module, ident_name)),
+      std::move(step), BinOp_add_assign));
   }
 
   if (has_parenthesis) {
-      ExpectRead(Token_close_parenthesis);
+    ExpectRead(Token_close_parenthesis);
   }
 
   std::unique_ptr<AstNode> loop_block = nullptr;
   if (Peek() && Peek()->type == Token_open_brace) {
-      loop_block = ParseStatement(); // read the block
+    loop_block = ParseStatement(); // read the block
   } else if (MatchRead(Token_colon)) {
-      auto block_ast = std::unique_ptr<AstBlock>(new AstBlock(Location(), main_module));
-      auto stmt = ParseStatement();
-      if (stmt != nullptr) {
-          block_ast->children.push_back(std::move(stmt));
-      }
-      loop_block = std::move(block_ast);
+    auto block_ast = std::unique_ptr<AstBlock>(new AstBlock(Location(), main_module));
+    auto stmt = ParseStatement();
+    if (stmt != nullptr) {
+      block_ast->children.push_back(std::move(stmt));
+    }
+    loop_block = std::move(block_ast);
   } else if (MatchRead(Token_semicolon)) {
-      // if nothing else, we need a semicolon
-      loop_block = std::unique_ptr<AstBlock>(new AstBlock(Location(), main_module));
+    // if nothing else, we need a semicolon
+    loop_block = std::unique_ptr<AstBlock>(new AstBlock(Location(), main_module));
   } else {
-      ErrorMsg(msg_unexpected_token, Location(), Read()->value);
+    ErrorMsg(msg_unexpected_token, Location(), Read()->value);
   }
 
   return std::unique_ptr<AstForLoop>(new AstForLoop(tok->location, main_module,
@@ -1239,14 +1354,14 @@ std::unique_ptr<AstNode> Parser::ParseTryCatch() {
 }
 
 std::unique_ptr<AstNode> Parser::ParseRange() {
-    Token *tok = ExpectRead(Token_keyword, Keyword_ToString(Keyword_range));
+  Token *tok = ExpectRead(Token_keyword, Keyword_ToString(Keyword_range));
 
-    ExpectRead(Token_open_parenthesis);
-    Token *first = ExpectRead(Token_integer);
-    ExpectRead(Token_comma);
-    Token *second = ExpectRead(Token_integer);
-    ExpectRead(Token_close_parenthesis);
+  ExpectRead(Token_open_parenthesis);
+  Token *first = ExpectRead(Token_integer);
+  ExpectRead(Token_comma);
+  Token *second = ExpectRead(Token_integer);
+  ExpectRead(Token_close_parenthesis);
 
-    return nullptr;
+  return nullptr;
 }
 } // namespace avm

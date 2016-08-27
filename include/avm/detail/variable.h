@@ -18,12 +18,12 @@ class VMState;
 class Variable : public Object {
 public:
   enum {
-    type_null,
-    type_integer,
-    type_float,
-    type_string,
-    type_structure,
-    type_native,
+    Type_none,
+    Type_int,
+    Type_float,
+    Type_string,
+    Type_struct,
+    Type_native,
   } type;
 
   /** Sets the inner value to null by default */
@@ -87,137 +87,75 @@ public:
       Otherwise, the original value is retrieved.
   */
   template <typename T>
-  T Cast() const {
+  T Cast() {
     typedef typename std::decay<T>::type Decayed;
-
-    if (this == nullptr || value.IsNull()) {
+    if (this == nullptr) {
       std::cout << "cast() used on null value\n";
       throw "null value";
     }
+    return GetValue<Decayed, T>();
+  }
 
-    if (typeid(Decayed) != TypeInfo()) {
-      if (std::is_reference<T>::value) {
-        std::cout << "cannot return a reference of a different type\n";
-        throw "cannot return reference";
-      } else {
-        // convert inner type
-        bool success = false;
-        Decayed converted = Conversions::Convert<Decayed>(this, success);
-        if (!success) {
-          std::cout << "no conversion '" << value.TypeInfo().name() << "' -> '" << typeid(Decayed).name() << "'\n";
-          throw "no conversion";
-        } else {
-          return converted;
-        }
-      }
+protected:
+  /** Holds a heap value */
+  Dynamic value;
+  /** Numeric types are stored on the stack */
+  union {
+    AVMInteger_t int_value;
+    AVMFloat_t float_value;
+  } stack_value;
+
+private:
+  template <typename Decayed, typename T>
+  typename std::enable_if<std::is_arithmetic<Decayed>::value, T>::type
+    GetValue() {
+    if (type == Type_int) {
+      return (T)stack_value.int_value;
+    } else if (type == Type_float) {
+      return (T)stack_value.float_value;
+    } else {
+      throw "No conversion";
     }
+  }
 
+  template <typename Decayed, typename T>
+  typename std::enable_if<!std::is_arithmetic<Decayed>::value, T>::type
+    GetValue() {
     return value.Get<T>();
   }
 
-//protected:
-  /** Holds the actual value */
-  Dynamic value;
-
-private:
   /** Converts types such as int and long to the internal representation, avm_int */
   template <typename T>
   typename std::enable_if<std::is_integral<T>::value, void>::type
-  SetValue(T t) {
-    type = type_integer;
-    value.Assign(static_cast<AVMInteger_t>(t));
+    SetValue(T t) {
+    type = Type_int;
+    stack_value.int_value = static_cast<AVMInteger_t>(t);
   }
 
   /** Converts types such as double and float to the internal representation, avm_float */
   template <typename T>
   typename std::enable_if<std::is_floating_point<T>::value, void>::type
-  SetValue(T t) {
-    type = type_float;
-    value.Assign(static_cast<AVMFloat_t>(t));
+    SetValue(T t) {
+    type = Type_float;
+    stack_value.float_value = static_cast<AVMFloat_t>(t);
   }
 
   /** Does not do any conversion for string objects */
   template <typename T>
   typename std::enable_if<std::is_same<std::string, T>::value, void>::type
-  SetValue(T t) {
-    type = type_string;
+    SetValue(T t) {
+    type = Type_string;
     value.Assign(t);
   }
 
   /** Native object (must also specify that it is not a std::string) */
-  template <typename T> 
-  typename std::enable_if<std::is_pointer<T>::value || (std::is_class<T>::value && !std::is_same<std::string, T>::value), 
-    void>::type 
-  SetValue(T t) {
-    type = type_native;
+  template <typename T>
+  typename std::enable_if<std::is_pointer<T>::value || (std::is_class<T>::value && !std::is_same<std::string, T>::value),
+    void>::type
+    SetValue(T t) {
+    type = Type_native;
     value.Assign(t);
   }
-
-  /** Allows a variable to be converted to a similar type of value.
-      Mainly used for things like adding an integer to a float, where
-      the integer would be converted to a float.
-  */
-  struct Conversions {
-    template <typename T>
-    typename std::enable_if<std::is_integral<T>::value || std::is_floating_point<T>::value, T>::type
-      static Convert(const Variable *const in_val, bool &success) {
-      success = true;
-      if (in_val->value.Compatible<double>()) {
-        const auto v = in_val->value.Get<double>();
-        return static_cast<T>(v);
-      } else if (in_val->value.Compatible<long double>()) {
-        const auto v = in_val->value.Get<long double>();
-        return static_cast<T>(v);
-      } else if (in_val->value.Compatible<float>()) {
-        const auto v = in_val->value.Get<float>();
-        return static_cast<T>(v);
-      } else if (in_val->value.Compatible<bool>()) {
-        const auto v = in_val->value.Get<bool>();
-        return static_cast<T>(v);
-      } else if (in_val->value.Compatible<int>()) {
-        const auto v = in_val->value.Get<int>();
-        return static_cast<T>(v);
-      } else if (in_val->value.Compatible<unsigned int>()) {
-        const auto v = in_val->value.Get<unsigned int>();
-        return static_cast<T>(v);
-      } else if (in_val->value.Compatible<short>()) {
-        const auto v = in_val->value.Get<short>();
-        return static_cast<T>(v);
-      } else if (in_val->value.Compatible<unsigned short>()) {
-        const auto v = in_val->value.Get<unsigned short>();
-        return static_cast<T>(v);
-      } else if (in_val->value.Compatible<char>()) {
-        const auto v = in_val->value.Get<char>();
-        return static_cast<T>(v);
-      } else if (in_val->value.Compatible<unsigned char>()) {
-        const auto v = in_val->value.Get<unsigned char>();
-        return static_cast<T>(v);
-      } else if (in_val->value.Compatible<long>()) {
-        const auto v = in_val->value.Get<long>();
-        return static_cast<T>(v);
-      } else if (in_val->value.Compatible<unsigned long>()) {
-        const auto v = in_val->value.Get<unsigned long>();
-        return static_cast<T>(v);
-      } else if (in_val->value.Compatible<long long>()) {
-        const auto v = in_val->value.Get<long long>();
-        return static_cast<T>(v);
-      } else if (in_val->value.Compatible<unsigned long long>()) {
-        const auto v = in_val->value.Get<unsigned long long>();
-        return static_cast<T>(v);
-      } else {
-        success = false;
-        return T();
-      }
-    }
-
-    // for other objects
-    template <typename T>
-    typename std::enable_if<!(std::is_integral<T>::value || std::is_floating_point<T>::value), T>::type
-      static Convert(const Variable *const in_val, bool &success) {
-      success = false;
-      throw "not implemented";
-    }
-  };
 };
 } // namespace avm
 

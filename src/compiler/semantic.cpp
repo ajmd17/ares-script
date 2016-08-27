@@ -7,6 +7,7 @@
 
 #include <alexer.h>
 #include <aparser.h>
+#include <config.h>
 
 namespace avm {
 SemanticAnalyzer::SemanticAnalyzer(CompilerState *state_ptr)
@@ -276,6 +277,31 @@ void SemanticAnalyzer::Accept(AstBinaryOp *node) {
   switch (node->op) {
     // FALLTHROUGH
   case BinOp_assign:
+    // assignment, change the set type
+    if (left->type == ast_type_variable) {
+      auto *casted = static_cast<AstVariable*>(left.get());
+      if (!casted->is_const) {
+        auto *right_side = right.get();
+        if (right->type == ast_type_expression) {
+          // get inner child
+          auto *expr_ast = static_cast<AstExpression*>(right.get());
+          right_side = expr_ast->child.get();
+        }
+
+        casted->symbol_ptr->current_value = right.get();
+        casted->current_value = casted->symbol_ptr->current_value;
+        switch (right_side->type) {
+        case ast_type_integer:
+        case ast_type_float:
+        case ast_type_string:
+          casted->symbol_ptr->is_literal = true;
+          break;
+        default:
+          casted->symbol_ptr->is_literal = false;
+          break;
+        }
+      }
+    }
   case BinOp_add_assign:
   case BinOp_subtract_assign:
   case BinOp_multiply_assign:
@@ -286,6 +312,7 @@ void SemanticAnalyzer::Accept(AstBinaryOp *node) {
         ErrorMsg(msg_const_identifier, casted->location, casted->name);
       }
 
+      // This usage is prohibited on inlined objects
       if (left->HasAttribute("inline")) {
         ErrorMsg(msg_prohibited_action_attribute, left->location, "inline");
       }
@@ -342,6 +369,8 @@ void SemanticAnalyzer::Accept(AstModuleAccess *node) {
 }
 
 void SemanticAnalyzer::Accept(AstVariableDeclaration *node) {
+  node->is_const = node->HasAttribute("const");
+
   std::string var_name = state_ptr->MakeVariableName(node->name, node->module);
   if (FindVariable(var_name, true)) {
     ErrorMsg(msg_redeclared_identifier, node->location, node->name);
@@ -352,6 +381,22 @@ void SemanticAnalyzer::Accept(AstVariableDeclaration *node) {
     info.node = node;
     info.original_name = node->name;
     info.is_const = node->is_const;
+    info.current_value = node->assignment.get();
+
+    if (node->assignment->type == ast_type_expression) {
+      auto *expr_casted = static_cast<AstExpression*>(node->assignment.get());
+      switch (expr_casted->child->type) {
+      case ast_type_integer:
+      case ast_type_float:
+      case ast_type_string:
+        info.is_literal = true;
+        break;
+      default:
+        info.is_literal = false;
+        break;
+      }
+    }
+
     state_ptr->current_level().locals.push_back({ var_name, info });
 
     Accept(node->assignment.get());
@@ -405,13 +450,15 @@ void SemanticAnalyzer::Accept(AstVariable *node) {
   Symbol *ptr = nullptr;
   std::string var_name = state_ptr->MakeVariableName(node->name, node->module);
   if (FindVariable(var_name, false, ptr)) {
+    // Copy symbol information
+    node->is_alias = ptr->is_alias;
     if (ptr->is_alias) {
-      node->is_alias = true;
       node->alias_to = ptr->node;
     }
-    if (ptr->is_const) {
-      node->is_const = true;
-    }
+    node->is_const = ptr->is_const;
+    node->is_literal = ptr->is_literal;
+    node->current_value = ptr->current_value;
+    node->symbol_ptr = ptr;
 
     if (ptr->node != nullptr) {
       if (ptr->node->type == ast_type_function_definition) {
@@ -420,7 +467,12 @@ void SemanticAnalyzer::Accept(AstVariable *node) {
         }
       }
 
-      IncrementUseCount(ptr->node);
+      // do not increment use count for const literals, they will be inlined
+      if (!(config::optimize_constant_folding && 
+        node->is_const && node->is_literal && node->current_value != nullptr)) {
+
+        IncrementUseCount(ptr->node);
+      }
     }
   } else {
     ErrorMsg(msg_undeclared_identifier, node->location, node->name);
@@ -700,13 +752,13 @@ void SemanticAnalyzer::Accept(AstReturnStmt *node) {
 }
 
 void SemanticAnalyzer::Accept(AstForLoop *node) {
-    /*std::string var_name = state_ptr->MakeVariableName(node->identifier, node->module);
+  /*std::string var_name = state_ptr->MakeVariableName(node->identifier, node->module);
 
-    // create the index variable
-    Symbol info;
-    info.node = nullptr;
-    info.original_name = node->identifier;
-    state_ptr->current_level().locals.push_back({ var_name, info });*/
+  // create the index variable
+  Symbol info;
+  info.node = nullptr;
+  info.original_name = node->identifier;
+  state_ptr->current_level().locals.push_back({ var_name, info });*/
 
   if (node->block != nullptr) {
     auto *block = dynamic_cast<AstBlock*>(node->block.get());

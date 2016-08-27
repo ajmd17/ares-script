@@ -12,7 +12,6 @@
 
 namespace avm {
 typedef CompilerState::LevelInfo LevelInfo;
-typedef CompilerState::Symbol Symbol;
 typedef CompilerState::LevelType LevelType;
 typedef CompilerState::ModuleDefine ModuleDefine;
 typedef CompilerState::ExternalFunction ExternalFunction;

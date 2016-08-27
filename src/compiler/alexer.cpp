@@ -35,6 +35,7 @@ Token Lexer::NextToken() {
 
   char ch = PeekChar();
   char next_char = PeekChar(1);
+  char next_next_char = PeekChar(2);
   if (ch == '\'' || ch == '"') {
     return ReadStringLiteral();
   } else if (isdigit(ch) && (next_char == 'x' || next_char == 'X')) {
@@ -43,7 +44,8 @@ Token Lexer::NextToken() {
     return ReadNumberLiteral();
   } else if (ch == '.' && isdigit(next_char)) {
     // read float like .5
-    return ReadFloatLiteral();
+    std::string float_start = "0";
+    return ReadFloatLiteral(float_start);
   } else if (ch == '_' || IsAlpha(ch)) {
     return ReadIdentifier();
   } else if (ch == '+' || ch == '-' || ch == '*' || ch == '/' || ch == '%' ||
@@ -91,7 +93,7 @@ Token Lexer::ReadNumberLiteral() {
   char ch = PeekChar();
   do {
     if (ch == '.') {
-      return ReadFloatLiteral();
+      return ReadFloatLiteral(str);
     }
 
     str += ReadChar();
@@ -114,26 +116,25 @@ Token Lexer::ReadHexNumberLiteral() {
     ch = PeekChar();
   } while (isxdigit(ch));
 
-  long value = std::stol(str, 0, 16);
+  long long value = std::stoll(str, 0, 16);
   std::stringstream ss;
   ss << value;
 
   return { TokenType::Token_integer, ss.str(), loc };
 }
 
-Token Lexer::ReadFloatLiteral() {
+Token Lexer::ReadFloatLiteral(std::string &start) {
   SourceLocation loc = state.location;
-  std::string str;
   ReadChar();
-  str += ".";
+  start += ".";
 
   char ch = PeekChar();
   do {
-    str += ReadChar();
+    start += ReadChar();
     ch = PeekChar();
   } while (isdigit(ch));
 
-  return { TokenType::Token_float, str, loc };
+  return { TokenType::Token_float, start, loc };
 }
 
 Token Lexer::ReadStringLiteral() {

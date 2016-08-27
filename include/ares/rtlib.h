@@ -24,6 +24,14 @@ public:
   static AVMString_t ConsoleWriteLn(const AVMString_t &str);
   static AVMString_t ConsoleReadLn();*/
 
+  static void FileIO_open(VMState *state, Object *arg1, Object *arg2);
+  static void FileIO_write(VMState *state, Object *arg1, Object *arg2);
+  static void FileIO_read(VMState *state, Object *arg1, Object *arg2);
+  static void FileIO_close(VMState *state, Object *arg1);
+
+  static void Console_println(VMState *state, Object *arg1);
+  static void Console_readln(VMState *state);
+
   static void Reflection_typeof(VMState *state, Object *arg1);
 
   static void Convert_toString(VMState *state, Object *arg1);

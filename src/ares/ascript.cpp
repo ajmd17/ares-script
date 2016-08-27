@@ -25,13 +25,18 @@ Script::Script(const std::string &code, const std::string &original_path, const 
 Script::~Script() {
 }
 
-double Tic() {
+void Tic(VMState *state) {
   global_timer.start();
-  return 0;
 }
 
-double Toc() {
-  return global_timer.elapsed();
+void Toc(VMState *state) {
+  auto ref = Reference(*state->heap.AllocNull());
+  auto result = new Variable();
+  result->Assign(global_timer.elapsed());
+  result->flags |= Object::FLAG_CONST;
+  result->flags |= Object::FLAG_TEMPORARY;
+  ref.Ref() = result;
+  state->stack.push_back(ref);
 }
 
 /** \todo Make this check if the bytecode has already been generated, instead of re-compiling every time */
@@ -64,8 +69,7 @@ bool Script::Run() {
     compiler.Module("System")
       .Define("run", 1);
     compiler.Module("Console")
-      .Define("write", 1)
-      .Define("writeln", 1)
+      .Define("println", 1)
       .Define("readln", 0);
 
     if (compiler.Compile(unit.get())) {
@@ -89,22 +93,16 @@ bool Script::Run() {
 
       VMInstance *vm = new VMInstance();
 
-      /*vm->BindFunction("FileIO_open", RuntimeLib::OpenFile);
-      vm->BindFunction("FileIO_write", RuntimeLib::WriteStringToFile);
-      vm->BindFunction("FileIO_read", RuntimeLib::ReadStringFromFile);
-      vm->BindFunction("FileIO_close", RuntimeLib::CloseFile);
+      vm->BindFunction("FileIO_open", RuntimeLib::FileIO_open);
+      vm->BindFunction("FileIO_write", RuntimeLib::FileIO_write);
+      vm->BindFunction("FileIO_read", RuntimeLib::FileIO_read);
+      vm->BindFunction("FileIO_close", RuntimeLib::FileIO_close);
 
       vm->BindFunction("Clock_start", Tic);
       vm->BindFunction("Clock_stop", Toc);
 
-      vm->BindFunction("Convert_toInt", RuntimeLib::ConvertToInt);
-      vm->BindFunction("Convert_toBool", RuntimeLib::ConvertToBool);
-
-      vm->BindFunction("System_run", RuntimeLib::SystemRun);
-
-      vm->BindFunction("Console_write", RuntimeLib::ConsoleWrite);
-      vm->BindFunction("Console_writeln", RuntimeLib::ConsoleWriteLn);
-      vm->BindFunction("Console_readln", RuntimeLib::ConsoleReadLn);*/
+      vm->BindFunction("Console_println", RuntimeLib::Console_println);
+      vm->BindFunction("Console_readln", RuntimeLib::Console_readln);
       
       vm->BindFunction("Reflection_typeof", RuntimeLib::Reflection_typeof);
 

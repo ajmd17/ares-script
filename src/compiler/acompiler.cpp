@@ -368,16 +368,16 @@ void Compiler::Accept(AstMemberAccess *node) {
   } else {
     Accept(node->left.get());
     if (node->right->type == ast_type_member_access) {
-        Accept(node->right.get());
-        auto right_ast = static_cast<AstMemberAccess*>(node->right.get());
-        bstream << Instruction<OpCode_t, int32_t, const char *>(OpCode_load_member, right_ast->left_str.length() + 1, right_ast->left_str.c_str());
+      Accept(node->right.get());
+      auto right_ast = static_cast<AstMemberAccess*>(node->right.get());
+      bstream << Instruction<OpCode_t, int32_t, const char *>(OpCode_load_member, right_ast->left_str.length() + 1, right_ast->left_str.c_str());
     } else if (node->right->type == ast_type_variable) {
-        auto right_ast = static_cast<AstVariable*>(node->right.get());
-        bstream << Instruction<OpCode_t, int32_t, const char *>(OpCode_load_member, right_ast->name.length() + 1, right_ast->name.c_str());
+      auto right_ast = static_cast<AstVariable*>(node->right.get());
+      bstream << Instruction<OpCode_t, int32_t, const char *>(OpCode_load_member, right_ast->name.length() + 1, right_ast->name.c_str());
     } else if (node->right->type == ast_type_function_call) {
-        auto right_ast = static_cast<AstFunctionCall*>(node->right.get());
-        bstream << Instruction<OpCode_t, int32_t, const char *>(OpCode_load_member, right_ast->name.length() + 1, right_ast->name.c_str());
-        bstream << Instruction<OpCode_t>(OpCode_invoke_object);
+      auto right_ast = static_cast<AstFunctionCall*>(node->right.get());
+      bstream << Instruction<OpCode_t, int32_t, const char *>(OpCode_load_member, right_ast->name.length() + 1, right_ast->name.c_str());
+      bstream << Instruction<OpCode_t>(OpCode_invoke_object);
     }
   }
 }
@@ -412,9 +412,13 @@ void Compiler::Accept(AstVariable *node) {
   if (node->is_alias) {
     Accept(node->alias_to);
   } else {
-    std::string var_name(state.MakeVariableName(node->name, node->module));
-    bstream << Instruction<OpCode_t, int32_t, const char*>(OpCode_load_local, 
-      var_name.length() + 1, var_name.c_str());
+    if (config::optimize_constant_folding && node->is_const && node->is_literal && node->current_value != nullptr) {
+      Accept(node->current_value);
+    } else {
+      std::string var_name(state.MakeVariableName(node->name, node->module));
+      bstream << Instruction<OpCode_t, int32_t, const char*>(OpCode_load_local,
+        var_name.length() + 1, var_name.c_str());
+    }
   }
 }
 
@@ -427,7 +431,7 @@ void Compiler::Accept(AstFloat *node) {
 }
 
 void Compiler::Accept(AstString *node) {
-  bstream << Instruction<OpCode_t, int32_t, const char*>(OpCode_load_string, 
+  bstream << Instruction<OpCode_t, int32_t, const char*>(OpCode_load_string,
     node->value.length() + 1, node->value.c_str());
 }
 
@@ -474,7 +478,7 @@ void Compiler::Accept(AstFunctionDefinition *node) {
         Accept(body);
         DecreaseBlock();
 
-        // Return instruction is placed after the block is decreased, 
+        // Return instruction is placed after the block is decreased,
         // so that the function will finish execution of the block before ending.
         bstream << Instruction<OpCode_t>(OpCode_return);
       }
@@ -485,7 +489,7 @@ void Compiler::Accept(AstFunctionDefinition *node) {
 }
 
 void Compiler::Accept(AstFunctionExpression *node) {
-  bstream << Instruction<OpCode_t, uint8_t, uint32_t, uint8_t>(OpCode_new_function, 0, 
+  bstream << Instruction<OpCode_t, uint8_t, uint32_t, uint8_t>(OpCode_new_function, 0,
     node->arguments.size(), 0/*No variadic support yet*/);
 
   auto *body = dynamic_cast<AstBlock*>(node->block.get());
@@ -495,14 +499,14 @@ void Compiler::Accept(AstFunctionExpression *node) {
     // create params as local variables
     for (auto it = node->arguments.rbegin(); it != node->arguments.rend(); ++it) {
       std::string var_name = state.MakeVariableName(*it, node->module);
-      bstream << Instruction<OpCode_t, int32_t, const char*>(OpCode_store_as_local, 
+      bstream << Instruction<OpCode_t, int32_t, const char*>(OpCode_store_as_local,
         var_name.length() + 1, var_name.c_str());
     }
 
     Accept(body);
     DecreaseBlock();
 
-    // Return instruction is placed after the block is decreased, 
+    // Return instruction is placed after the block is decreased,
     // so that the function will finish execution of the block before ending.
     bstream << Instruction<OpCode_t>(OpCode_return);
   }
@@ -513,7 +517,6 @@ void Compiler::Accept(AstFunctionCall *node) {
   for (auto &&param : node->arguments) {
     Accept(param.get());
   }
-
 
   if (node->is_alias) {
     Accept(node->alias_to);
@@ -531,7 +534,7 @@ void Compiler::Accept(AstFunctionCall *node) {
           // create params as local variables
           for (auto it = def->arguments.rbegin(); it != def->arguments.rend(); ++it) {
             std::string arg_name = state.MakeVariableName(*it, def->module);
-            bstream << Instruction<OpCode_t, int32_t, const char*>(OpCode_store_as_local, 
+            bstream << Instruction<OpCode_t, int32_t, const char*>(OpCode_store_as_local,
               arg_name.length() + 1, arg_name.c_str());
           }
 
@@ -545,7 +548,7 @@ void Compiler::Accept(AstFunctionCall *node) {
 
     if (!inlined) {
       std::string var_name = state.MakeVariableName(node->name, node->module);
-      bstream << Instruction<OpCode_t, int32_t, const char*>(OpCode_load_local, 
+      bstream << Instruction<OpCode_t, int32_t, const char*>(OpCode_load_local,
         var_name.length() + 1, var_name.c_str());
     }
   }
@@ -609,41 +612,38 @@ void Compiler::Accept(AstReturnStmt *node) {
 }
 
 void Compiler::Accept(AstForLoop *node) {
+  /* bstream << Instruction<OpCode_t>(OpCode_irl);
+   IncreaseBlock(LevelType::Level_default);
 
-   /* bstream << Instruction<OpCode_t>(OpCode_irl);
-    IncreaseBlock(LevelType::Level_default);
+   auto id = ++state.block_id_counter;
 
-    auto id = ++state.block_id_counter;
+   if (node->range->type == ast_type_range) {
+       AstRange *range = static_cast<AstRange*>(node->range.get());
+       AVMInteger_t first = range->first, second = range->second;
+       AVMInteger_t diff = second - first;
+       bool pos = diff >= 0;
 
-    if (node->range->type == ast_type_range) {
+       std::string var_name = state.MakeVariableName(node->identifier, node->module);
+       bstream << Instruction<OpCode_t, int32_t, const char*>(OpCode_load_local,
+           var_name.length() + 1, var_name.c_str());
 
-        AstRange *range = static_cast<AstRange*>(node->range.get());
-        AVMInteger_t first = range->first, second = range->second;
-        AVMInteger_t diff = second - first;
-        bool pos = diff >= 0;
+       bstream << Instruction<OpCode_t, AVMInteger_t>(OpCode_load_integer, first);
+       bstream << Instruction<OpCode_t>(OpCode_assign);
 
-        std::string var_name = state.MakeVariableName(node->identifier, node->module);
-        bstream << Instruction<OpCode_t, int32_t, const char*>(OpCode_load_local,
-            var_name.length() + 1, var_name.c_str());
+       bstream << Instruction<OpCode_t, AVMInteger_t>(OpCode_load_integer, second);
+       bstream << Instruction<OpCode_t>(OpCode_neql);
+       bstream << Instruction<OpCode_t>(OpCode_irl_if_true);
 
-        bstream << Instruction<OpCode_t, AVMInteger_t>(OpCode_load_integer, first);
-        bstream << Instruction<OpCode_t>(OpCode_assign);
+       IncreaseBlock(LevelType::Level_loop);
+       Accept(node->block.get());
+       DecreaseBlock();
 
+       bstream << Instruction<OpCode_t, AVMInteger_t>(OpCode_load_integer, first);
+       bstream << Instruction<OpCode_t, AVMInteger_t>(OpCode_add, pos ? 1 : -1);
+   }
 
-        bstream << Instruction<OpCode_t, AVMInteger_t>(OpCode_load_integer, second);
-        bstream << Instruction<OpCode_t>(OpCode_neql);
-        bstream << Instruction<OpCode_t>(OpCode_irl_if_true);
-
-        IncreaseBlock(LevelType::Level_loop);
-        Accept(node->block.get());
-        DecreaseBlock();
-
-        bstream << Instruction<OpCode_t, AVMInteger_t>(OpCode_load_integer, first);
-        bstream << Instruction<OpCode_t, AVMInteger_t>(OpCode_add, pos ? 1 : -1);
-    }
-
-    bstream << Instruction<OpCode_t, uint32_t>(OpCode_jump_if_true, id);
-    DecreaseBlock();*/
+   bstream << Instruction<OpCode_t, uint32_t>(OpCode_jump_if_true, id);
+   DecreaseBlock();*/
   bool empty_body = true;
   if (node->block != nullptr) {
     AstBlock *block = dynamic_cast<AstBlock*>(node->block.get());
@@ -659,7 +659,7 @@ void Compiler::Accept(AstForLoop *node) {
     IncreaseBlock(LevelType::Level_default);
     Accept(node->initializer.get());
     bstream << Instruction<OpCode_t, uint32_t>(OpCode_store_address, id);
-     
+
     Accept(node->conditional.get());
     bstream << Instruction<OpCode_t>(OpCode_irl_if_true);
 
