@@ -1,6 +1,69 @@
 module Test;
 
-using Reflection.typeof;
+import "lib/arui"
+
+# initialize arui
+Arui.init();
+
+# add a button
+var button = Arui.button("My button", 25, 25);
+
+
+/* Standard definitions */
+alias string = Convert.toString;
+alias int = Convert.toInt;
+alias float = Convert.toFloat;
+alias bool = Convert.toBool;
+
+Clock.start();
+for i: 0, 351 {
+  print i;
+  
+  if i % 10 == 0:  print "\n";
+  else:            print "\t";
+}
+print 'Elapsed time = ', Clock.stop(), '\n';
+
+var window = object {
+  title: "my window",
+  show: func {
+    print "Show window\n";
+  }
+}
+window.show();
+
+print("enter your name: ");
+var name = Console.readln();
+print("your name is: ", name, "\n\n");
+
+Console.system("pause");
+
+#destroy arui
+Arui.destroy();
+
+/*class person {
+  var name;
+  var dateOfBirth;
+  
+  func printInfo(self) {
+    print("Name: ", self.name, "\n", 
+          "DOB: ",  self.dateOfBirth, "\n");
+  }
+}
+
+var me = new person;
+# returns:
+#  var me = object {
+#    name: null,
+#    dateOfBirth: null
+#  }
+
+me.printInfo();
+# really does:
+#  person_printInfo(me);*/
+
+
+/*using Reflection.typeof;
 using Console.println;
 
 alias int = Convert.toInt;
@@ -8,13 +71,11 @@ alias str = Convert.toString;
 alias bool = Convert.toBool;
 
 var x0 = "hi";
-attribute{"const"} var x1 = 8 + 1;
-print("x1 = ", x1, "\n");
-x0 = "yo";
+const x1 = 8 + 3.23;
 print("x1 = ", x1, "\n");
 
+print ('-x1 = ', -x1, '\n');
 
-/*
 if 1 != 4 {
   println("1 is not 4.");
 }
@@ -27,20 +88,14 @@ func other () {
 }
 
 func main {
-  # This is a comment
-  print('Counting to 100...\n\n');
-  
-  for i: 0, 3:
-    print('i = ', i, '\t');
-
-  for ( var counter = 0; counter <= 100; counter+=1 ) { 
-    print counter
-    
-    if counter % 10 is 0: 
-      print"\n";
-    else: 
-      print"\t";
+  print "Counting 1-100...\n\n";
+  for i = 1, 101 {
+    print i
+    if i % 10 == 0:  print "\n";
+    else if i > 50:  print " ";
+    else:            print "\t";
   }
+  print "\n\n";
   
   var inner: func {
     var vec1: object { x:5, y:1, z:2 }
@@ -54,9 +109,9 @@ func main {
       }
     }
 
-    #print"vec1 = ",vec1,'\n';
-    #print"vec2 = ",vec2,'\n';
-    #print"vec1 + vec2 = ",addvectors(vec1,vec2),'\n\n\n';
+    print "vec1 = ",vec1,'\n';
+    print "vec2 = ",vec2,'\n';
+    print "vec1 + vec2 = ", addvectors(vec1,vec2), '\n\n\n';
 
     var andrew: object { 
       name: "andrew", 
@@ -77,14 +132,12 @@ func main {
   
   other();
   inner();
-  
-  print 'done\n';
 }
 
 main();
 
 # hex numbers
-print ("0xDEADBEEF = ", 0xDEADBEEF, "\n");*/
+# print ("0xDEADBEEF = ", 0xDEADBEEF, "\n");
 
 /*for ( var i = 0; i < 10; i += 3 ) {
   print 'i = ', i, '\n';

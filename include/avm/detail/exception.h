@@ -73,6 +73,18 @@ struct MemberNotFoundException : public Exception {
     : Exception("member '" + name + "' not found") {
   }
 };
+
+struct LibraryLoadException : public Exception {
+  LibraryLoadException(const std::string &path)
+    : Exception("library '" + path + "' could not be loaded") {
+  }
+};
+
+struct LibraryFunctionLoadException : public Exception {
+  LibraryFunctionLoadException(const std::string &name)
+    : Exception("library function '" + name + "' could not be loaded") {
+  }
+};
 } // namespace avm
 
 #endif

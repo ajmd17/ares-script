@@ -1,6 +1,10 @@
 #include <ascript.h>
 #include <rtlib.h>
 
+#if WIN32
+#include <platform/loadlib_windows.h>
+#endif
+
 #include <compiler/aparser.h>
 #include <compiler/alexer.h>
 #include <compiler/acompiler.h>
@@ -20,23 +24,34 @@ static Timer global_timer = Timer();
 
 Script::Script(const std::string &code, const std::string &original_path, const std::string &output_file) 
   : code(code), original_path(original_path), output_file(output_file) {
+#if WIN32
+  RuntimeLib::libloader = new WindowsLibLoader();
+#endif
 }
 
 Script::~Script() {
 }
 
-void Tic(VMState *state) {
-  global_timer.start();
+void Tic(VMState *state, Object **args, size_t argc) {
+  if (CheckArgs(state, 0, argc)) {
+    global_timer.start();
+
+    auto ref = Reference(*state->heap.AllocObject<Variable>());
+    ref.Ref()->flags |= Object::FLAG_TEMPORARY;
+    state->stack.push_back(ref);
+  }
 }
 
-void Toc(VMState *state) {
-  auto ref = Reference(*state->heap.AllocNull());
-  auto result = new Variable();
-  result->Assign(global_timer.elapsed());
-  result->flags |= Object::FLAG_CONST;
-  result->flags |= Object::FLAG_TEMPORARY;
-  ref.Ref() = result;
-  state->stack.push_back(ref);
+void Toc(VMState *state, Object **args, size_t argc) {
+  if (CheckArgs(state, 0, argc)) {
+    auto ref = Reference(*state->heap.AllocNull());
+    auto result = new Variable();
+    result->Assign(global_timer.elapsed());
+    result->flags |= Object::FLAG_CONST;
+    result->flags |= Object::FLAG_TEMPORARY;
+    ref.Ref() = result;
+    state->stack.push_back(ref);
+  }
 }
 
 /** \todo Make this check if the bytecode has already been generated, instead of re-compiling every time */
@@ -60,15 +75,18 @@ bool Script::Run() {
       .Define("write", 2)
       .Define("read", 2)
       .Define("close", 1);
+    compiler.Module("System")
+      .Define("loadlib", 1)
+      .Define("loadfunc", 2);
     compiler.Module("Reflection")
       .Define("typeof", 1);
     compiler.Module("Convert")
       .Define("toString", 1)
       .Define("toInt", 1)
+      .Define("toFloat", 1)
       .Define("toBool", 1);
-    compiler.Module("System")
-      .Define("run", 1);
     compiler.Module("Console")
+      .Define("system", 1)
       .Define("println", 1)
       .Define("readln", 0);
 
@@ -98,16 +116,21 @@ bool Script::Run() {
       vm->BindFunction("FileIO_read", RuntimeLib::FileIO_read);
       vm->BindFunction("FileIO_close", RuntimeLib::FileIO_close);
 
+      vm->BindFunction("System_loadlib", RuntimeLib::System_loadlib);
+      vm->BindFunction("System_loadfunc", RuntimeLib::System_loadfunc);
+
       vm->BindFunction("Clock_start", Tic);
       vm->BindFunction("Clock_stop", Toc);
 
       vm->BindFunction("Console_println", RuntimeLib::Console_println);
       vm->BindFunction("Console_readln", RuntimeLib::Console_readln);
+      vm->BindFunction("Console_system", RuntimeLib::Console_system);
       
       vm->BindFunction("Reflection_typeof", RuntimeLib::Reflection_typeof);
 
       vm->BindFunction("Convert_toString", RuntimeLib::Convert_toString);
       vm->BindFunction("Convert_toInt", RuntimeLib::Convert_toInt);
+      vm->BindFunction("Convert_toFloat", RuntimeLib::Convert_toFloat);
       vm->BindFunction("Convert_toBool", RuntimeLib::Convert_toBool);
 
       vm->Execute(stream);
@@ -117,10 +140,10 @@ bool Script::Run() {
 
       return true;
     } else {
-      std::cout << "Compilation failed\n";
+      std::cout << "Compilation failed.\n";
     }
   } else {
-    std::cout << "Parsing failed\n";
+    std::cout << "Parsing failed.\n";
   }
 
   return false;

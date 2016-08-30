@@ -32,7 +32,7 @@ const std::map<ErrorType, std::string> BuildMessage::messages = {
   { msg_module_already_defined, "module '%' has already been defined" },
   { msg_module_not_imported, "module '%' was not imported"},
   { msg_identifier_is_module, "identifier '%' is the name of a module" },
-  { msg_import_not_found, "module '%' could not be found" },
+  { msg_import_not_found, "module '%' could not be found at the path '%'" },
   { msg_import_outside_global, "import not allowed outside of global scope" },
   { msg_import_current_file, "attempt to import current file" },
   { msg_self_outside_class, "'self' not allowed outside of a class" },

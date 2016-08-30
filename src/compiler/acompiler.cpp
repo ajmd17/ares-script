@@ -233,8 +233,7 @@ void Compiler::Accept(AstBlock *node) {
 
 void Compiler::Accept(AstExpression *node) {
   if (config::optimize_constant_folding) {
-    std::unique_ptr<AstNode> swapped(optimize(std::move(node->child)));
-    node->child.swap(swapped);
+    OptimizeAstNode(node->child);
   }
   Accept(node->child.get());
 
@@ -375,9 +374,15 @@ void Compiler::Accept(AstMemberAccess *node) {
       auto right_ast = static_cast<AstVariable*>(node->right.get());
       bstream << Instruction<OpCode_t, int32_t, const char *>(OpCode_load_member, right_ast->name.length() + 1, right_ast->name.c_str());
     } else if (node->right->type == ast_type_function_call) {
+      // accept member function call
       auto right_ast = static_cast<AstFunctionCall*>(node->right.get());
+
+      for (auto &&param : right_ast->arguments) {
+        Accept(param.get());
+      }
+
       bstream << Instruction<OpCode_t, int32_t, const char *>(OpCode_load_member, right_ast->name.length() + 1, right_ast->name.c_str());
-      bstream << Instruction<OpCode_t>(OpCode_invoke_object);
+      bstream << Instruction<OpCode_t, int32_t>(OpCode_invoke_object, right_ast->arguments.size());
     }
   }
 }
@@ -393,10 +398,13 @@ void Compiler::Accept(AstModuleAccess *node) {
 }
 
 void Compiler::Accept(AstVariableDeclaration *node) {
+  Accept(node->assignment.get()); // may have side effects, so accept anyway
   if ((config::optimize_remove_unused && UseCount(node) != 0) || !config::optimize_remove_unused) {
-    Accept(node->assignment.get());
     std::string var_name(state.MakeVariableName(node->name, node->module));
     bstream << Instruction<OpCode_t, int32_t, const char*>(OpCode_store_as_local, var_name.length() + 1, var_name.c_str());
+  } else {
+    // must pop the result of the assignment from the stack
+    bstream << Instruction<OpCode_t>(OpCode_pop);
   }
 }
 
@@ -742,5 +750,12 @@ void Compiler::IncreaseBlock(LevelType type) {
 void Compiler::DecreaseBlock() {
   state.levels[state.level--] = LevelInfo();
   bstream << Instruction<OpCode_t>(OpCode_dfl);
+}
+
+void Compiler::OptimizeAstNode(std::unique_ptr<AstNode> &node) {
+  auto optimized = node->Optimize();
+  if (optimized != nullptr) {
+    node.swap(optimized);
+  } 
 }
 } // namespace avm

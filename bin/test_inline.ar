@@ -1,43 +1,94 @@
-module InlineTest;
-
-import "test_inc.ar";
+module Test;
 
 Clock.start();
+for i: 0, 351 {
+  print i;
+  
+  if i % 10 == 0:  print "\n";
+  else:            print "\t";
+}
+print 'Elapsed time = ', Clock.stop(), '\n';
 
-var counter = 0;
-/*
-class MyClass(name, id) {
-  func getId(self) {
-    return self.id;
+/*using Reflection.typeof;
+using Console.println;
+
+alias int = Convert.toInt;
+alias str = Convert.toString;
+alias bool = Convert.toBool;
+
+var x0 = "hi";
+const x1 = 8 + 3.23;
+print("x1 = ", x1, "\n");
+
+print ('-x1 = ', -x1, '\n');
+
+if 1 != 4 {
+  println("1 is not 4.");
+}
+
+if 1 == 1:
+  println("1 is 1.");
+
+func other () {
+  println("some other function here\n");
+}
+
+func main {
+  print "Counting 1-100...\n\n";
+  for i = 1, 101 {
+    print i
+    if i % 10 == 0:  print "\n";
+    else if i > 50:  print " ";
+    else:            print "\t";
+  }
+  print "\n\n";
+  
+  var inner: func {
+    var vec1: object { x:5, y:1, z:2 }
+    var vec2: object { x:7, y:3, z:99 }
+
+    func addvectors (vec1, vec2) {
+      return object {
+        x: vec1.x + vec2.x,
+        y: vec1.y + vec2.y,
+        z: vec1.z + vec2.z
+      }
+    }
+
+    print "vec1 = ",vec1,'\n';
+    print "vec2 = ",vec2,'\n';
+    print "vec1 + vec2 = ", addvectors(vec1,vec2), '\n\n\n';
+
+    var andrew: object { 
+      name: "andrew", 
+      dateOfBirth: 970215, 
+      email: "andrewmacdonald97@hotmail.com"
+    }
+
+    var ethan: object {
+      name: "ethan",
+      dateOfBirth: 040401,
+      email: "ethanmacdonald04@gmail.com"
+    }
+
+    print("andrew = ", andrew, "\n");
+    print("ethan = ", ethan, "\n");
+    print("typeof(andrew) = ", typeof(andrew), "\n");
   }
   
-  func getName(self) {
-    return self.name;
-  }
-}*/
-
-var x1 = 3;
-alias x2 = x1;
-print 'x2 = ', x2, '\n';
-
-using Console.writeln;
-writeln("hello");
-
-//using FileIO.open;
-//var blah = open("blah.txt", "w+");
-//FileIO.close(blah);
-
-attribute{"inline"} func testInlined(x) {
-  var counter: 1;
-  while counter <= x {
-    print counter, '  ';
-    if counter % 10 == 0 {
-      print '\n';
-    }
-    counter += 1;
-  }
+  other();
+  inner();
 }
-testInlined(150);
-print('testInlined() took ', Clock.stop(), 's\n\n');
 
-//Debug.assert(false);
+main();
+
+# hex numbers
+# print ("0xDEADBEEF = ", 0xDEADBEEF, "\n");
+
+/*for ( var i = 0; i < 10; i += 3 ) {
+  print 'i = ', i, '\n';
+}
+
+print 'int(4.3) = ', int(4.3), '\n';
+print '\"True\" to bool = ', bool("True"), '\n';
+print 'typeof(counter) = ', typeof(counter), '\n';*/

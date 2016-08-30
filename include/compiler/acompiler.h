@@ -75,6 +75,8 @@ private:
   void DecreaseBlock();
 
   InstructionStream bstream;
+
+  static void OptimizeAstNode(std::unique_ptr<AstNode> &node);
 };
 } // namespace avm
 

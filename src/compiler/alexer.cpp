@@ -1,5 +1,6 @@
 #include <alexer.h>
 #include <iostream>
+#include <cstdlib>
 
 #include <detail/syntax/keywords.h>
 #include <detail/syntax/operators.h>
@@ -116,8 +117,8 @@ Token Lexer::ReadHexNumberLiteral() {
     ch = PeekChar();
   } while (isxdigit(ch));
 
-  long long value = std::stoll(str, 0, 16);
-  std::stringstream ss;
+  long long value = std::strtol(str.c_str(), 0, 16);
+  std::ostringstream ss;
   ss << value;
 
   return { TokenType::Token_integer, ss.str(), loc };

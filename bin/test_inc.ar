@@ -1,3 +1,0 @@
-module TestInclude;
-
-print 'Included\n';

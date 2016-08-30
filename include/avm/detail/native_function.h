@@ -12,6 +12,43 @@
 namespace avm {
 class NativeFunc : public Object {
 public:
+  typedef void(*FuncType) (VMState*, Object**, uint32_t);
+
+  NativeFunc(FuncType ptr)
+    : ptr(ptr) {
+  }
+
+  void invoke(VMState *state, uint32_t callargs) {
+    Object **args = new Object*[callargs];
+
+    for (int i = callargs - 1; i >= 0; i--) {
+      Reference ref = state->stack.back(); state->stack.pop_back();
+      args[i] = ref.Ref();
+    }
+
+    ptr(state, args, callargs);
+    delete[] args;
+  }
+
+  Reference Clone(VMState *state) {
+    return Reference(*state->heap.AllocObject<NativeFunc>(ptr));
+  }
+
+  std::string ToString() const {
+    return "<" + TypeString() + ">";
+  }
+
+  std::string TypeString() const {
+    std::string result("native function");
+    return result;
+  }
+
+private:
+  FuncType ptr;
+};
+
+/*class NativeFunc : public Object {
+public:
   NativeFunc(size_t nargs)
     : nargs(nargs) {
   }
@@ -33,10 +70,9 @@ protected:
   const size_t nargs;
 };
 
-//template <typename ReturnType>
 class NativeFunc_NoArgs : public NativeFunc {
 public:
-  typedef void(*FuncType) (VMState*);//ReturnType(*FuncType) (void);
+  typedef void(*FuncType) (VMState*);
 
   NativeFunc_NoArgs(FuncType ptr)
     : ptr(ptr), NativeFunc(0) {
@@ -44,17 +80,6 @@ public:
 
   void invoke(VMState *state, uint32_t callargs) {
     if (CheckArgs(state, nargs, callargs)) {
-      /*ReturnType return_value = ptr();
-    
-      auto ref = Reference(*state->heap.AllocNull());
-      auto var = new Variable();
-      var->Assign(return_value);
-      var->flags |= Object::FLAG_CONST;
-      var->flags |= Object::FLAG_TEMPORARY;
-      ref.Ref() = var;
-
-      state->stack.push_back(ref);*/
-
       ptr(state);
     }
   }
@@ -70,12 +95,11 @@ public:
 
 private:
   FuncType ptr;
-}; 
+};
 
-//template <typename ReturnType, typename T1>
 class NativeFunc_OneArg : public NativeFunc {
 public:
-  typedef void(*FuncType) (VMState*, Object*); //ReturnType(*FuncType) (T1);
+  typedef void(*FuncType) (VMState*, Object*);
 
   NativeFunc_OneArg(FuncType ptr)
     : ptr(ptr), NativeFunc(1) {
@@ -84,38 +108,12 @@ public:
   void invoke(VMState *state, uint32_t callargs) {
     if (CheckArgs(state, nargs, callargs)) {
       bool error = false;
-      /*Variable *args[1];
-      for (int i = nargs - 1; i >= 0; i--) {
-        auto arg = state->stack.back(); state->stack.pop_back();
-        Variable *arg_casted = dynamic_cast<Variable*>(arg.Ref());
-        if (!arg_casted) {
-          error = true;
-          state->HandleException(Exception("argument " + util::to_string(i) + " is not a valid variable"));
-        } else {
-          args[i] = arg_casted;
-        }
-      }
-
-      if (!error) {
-        ReturnType return_value = ptr(args[0]->Cast<T1>());
-
-        auto ref = Reference(*state->heap.AllocNull());
-        auto var = new Variable();
-        var->Assign(return_value);
-        var->flags |= Object::FLAG_CONST;
-        var->flags |= Object::FLAG_TEMPORARY;
-        ref.Ref() = var;
-
-        state->stack.push_back(ref);
-      }*/
-
       Object *args[1];
       for (int i = nargs - 1; i >= 0; i--) {
         Reference ref = state->stack.back(); state->stack.pop_back();
         args[i] = ref.Ref();
       }
       ptr(state, args[0]);
-
     }
   }
 
@@ -134,7 +132,7 @@ private:
 
 class NativeFunc_TwoArgs : public NativeFunc {
 public:
-  typedef void(*FuncType) (VMState*, Object*, Object*); //ReturnType(*FuncType) (T1);
+  typedef void(*FuncType) (VMState*, Object*, Object*);
 
   NativeFunc_TwoArgs(FuncType ptr)
     : ptr(ptr), NativeFunc(2) {
@@ -158,62 +156,6 @@ public:
 
   std::string TypeString() const {
     std::string result("native function");
-    return result;
-  }
-
-private:
-  FuncType ptr;
-};
-
-/*template <typename ReturnType, typename T1, typename T2>
-class NativeFunc_TwoArgs : public NativeFunc {
-public:
-  typedef ReturnType(*FuncType) (T1, T2);
-
-  NativeFunc_TwoArgs(FuncType ptr)
-    : ptr(ptr), NativeFunc(2) {
-  }
-
-  void invoke(VMState *state, uint32_t callargs) {
-    if (CheckArgs(state, nargs, callargs)) {
-      bool error = false;
-      Variable *args[2];
-      for (int i = nargs - 1; i >= 0; i--) {
-        auto arg = state->stack.back(); state->stack.pop_back();
-        Variable *arg_casted = dynamic_cast<Variable*>(arg.Ref());
-        if (!arg_casted) {
-          error = true;
-          state->HandleException(Exception("argument " + util::to_string(i) + " is not a valid variable"));
-        } else {
-          args[i] = arg_casted;
-        }
-      }
-
-      if (!error) {
-        ReturnType return_value = ptr(args[0]->Cast<T1>(), args[1]->Cast<T2>());
-
-        auto ref = Reference(*state->heap.AllocNull());
-        auto var = new Variable();
-        var->Assign(return_value);
-        var->flags |= Object::FLAG_CONST;
-        var->flags |= Object::FLAG_TEMPORARY;
-        ref.Ref() = var;
-
-        state->stack.push_back(ref);
-      }
-    }
-  }
-
-  Reference clone(Heap &heap) {
-    return Reference(*heap.AllocObject<NativeFunc_TwoArgs>(ptr));
-  }
-
-  std::string TypeString() const {
-    std::string result("native function (");
-    result += typeid(T1).name();
-    result += ", ";
-    result += typeid(T2).name();
-    result += ")";
     return result;
   }
 

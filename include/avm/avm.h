@@ -92,18 +92,8 @@ public:
     state->frames[state->frame_level]->locals.push_back({ name, ref });
   }*/
 
-  void BindFunction(const AVMString_t &name, void(*ptr) (VMState*)) {
-    Reference ref(*state->heap.AllocObject<NativeFunc_NoArgs>(ptr));
-    state->frames[state->frame_level]->locals.push_back({ name, ref });
-  }
-
-  void BindFunction(const AVMString_t &name, void(*ptr) (VMState*, Object*)) {
-    Reference ref(*state->heap.AllocObject<NativeFunc_OneArg>(ptr));
-    state->frames[state->frame_level]->locals.push_back({ name, ref });
-  }
-
-  void BindFunction(const AVMString_t &name, void(*ptr) (VMState*, Object*, Object*)) {
-    Reference ref(*state->heap.AllocObject<NativeFunc_TwoArgs>(ptr));
+  void BindFunction(const AVMString_t &name, void(*ptr) (VMState*, Object**, uint32_t)) {
+    Reference ref(*state->heap.AllocObject<NativeFunc>(ptr));
     state->frames[state->frame_level]->locals.push_back({ name, ref });
   }
 

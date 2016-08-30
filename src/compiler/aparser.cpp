@@ -215,8 +215,11 @@ std::unique_ptr<AstNode> Parser::ParseImports() {
 }
 
 std::unique_ptr<AstNode> Parser::ParseImport() {
-  const std::string local_path =
-    filepath.substr(0, filepath.find_last_of("/\\")) + "/";
+  std::string local_path;
+  auto idx = filepath.find_last_of("/\\");
+  if (idx != std::string::npos) {
+    local_path = filepath.substr(0, idx) + "/";
+  }
 
   bool is_module_import = true;
   std::string value;
@@ -265,7 +268,7 @@ std::unique_ptr<AstNode> Parser::ParseStatement() {
 
     const std::string &val = Peek()->value;
 
-    if (val == Keyword_ToString(Keyword_var)) {
+    if (val == Keyword_ToString(Keyword_var) || val == Keyword_ToString(Keyword_const)) {
       node = ParseVariableDeclaration();
     } else if (val == Keyword_ToString(Keyword_alias)) {
       node = ParseAlias();
@@ -344,7 +347,16 @@ std::unique_ptr<AstNode> Parser::ParseStatement() {
       var x: 3;
 */
 std::unique_ptr<AstNode> Parser::ParseVariableDeclaration() {
-  Token *tok = ExpectRead(Token_keyword, Keyword_ToString(Keyword_var));
+  Token *tok = nullptr;
+  bool is_const = false;
+  if (Match(Token_keyword, Keyword_ToString(Keyword_const))) {
+    tok = Read();
+    is_const = true;
+    // optionally allow "var" after "const"
+    MatchRead(Token_keyword, Keyword_ToString(Keyword_var));
+  } else {
+    tok = ExpectRead(Token_keyword, Keyword_ToString(Keyword_var));
+  }
 
   if ((!Peek()) || (Peek()->type != Token_identifier)) {
     ErrorMsg(msg_expected_identifier, Location());
@@ -369,7 +381,7 @@ std::unique_ptr<AstNode> Parser::ParseVariableDeclaration() {
     variable_names.pop();
 
     return std::move(std::unique_ptr<AstVariableDeclaration>(new AstVariableDeclaration(tok->location, main_module,
-      identifier, std::move(assignment), /*not const*/ false)));
+      identifier, std::move(assignment), is_const)));
   }
 
   return nullptr;
@@ -1023,7 +1035,9 @@ std::unique_ptr<AstNode> Parser::ParseIfStmt() {
       // if nothing else, we need a semicolon
       else_block = std::unique_ptr<AstBlock>(new AstBlock(Location(), main_module));
     } else {
-      ErrorMsg(msg_unexpected_token, Location(), Read()->value);
+      // because "else" does not need any tokens after, we can try to go from here.
+      // this will also allow support of "else if".
+      else_block = ParseStatement();
     }
   }
 

@@ -68,7 +68,30 @@ public:
     : location(location), module(module), type(type) {
   }
 
-  virtual ~AstNode() {}
+  virtual ~AstNode() = default;
+
+  virtual std::unique_ptr<AstNode> Optimize() const;
+  virtual std::unique_ptr<AstNode> operator+(const std::unique_ptr<AstNode> &other) const;
+  virtual std::unique_ptr<AstNode> operator-(const std::unique_ptr<AstNode> &other) const;
+  virtual std::unique_ptr<AstNode> operator*(const std::unique_ptr<AstNode> &other) const;
+  virtual std::unique_ptr<AstNode> operator/(const std::unique_ptr<AstNode> &other) const;
+  virtual std::unique_ptr<AstNode> operator%(const std::unique_ptr<AstNode> &other) const;
+  virtual std::unique_ptr<AstNode> operator^(const std::unique_ptr<AstNode> &other) const;
+  virtual std::unique_ptr<AstNode> operator&(const std::unique_ptr<AstNode> &other) const;
+  virtual std::unique_ptr<AstNode> operator|(const std::unique_ptr<AstNode> &other) const;
+  virtual std::unique_ptr<AstNode> operator<<(const std::unique_ptr<AstNode> &other) const;
+  virtual std::unique_ptr<AstNode> operator>>(const std::unique_ptr<AstNode> &other) const;
+  virtual std::unique_ptr<AstNode> operator&&(const std::unique_ptr<AstNode> &other) const;
+  virtual std::unique_ptr<AstNode> operator||(const std::unique_ptr<AstNode> &other) const;
+  virtual std::unique_ptr<AstNode> operator==(const std::unique_ptr<AstNode> &other) const;
+  virtual std::unique_ptr<AstNode> operator!=(const std::unique_ptr<AstNode> &other) const;
+  virtual std::unique_ptr<AstNode> operator<(const std::unique_ptr<AstNode> &other) const;
+  virtual std::unique_ptr<AstNode> operator>(const std::unique_ptr<AstNode> &other) const;
+  virtual std::unique_ptr<AstNode> operator<=(const std::unique_ptr<AstNode> &other) const;
+  virtual std::unique_ptr<AstNode> operator>=(const std::unique_ptr<AstNode> &other) const;
+  virtual std::unique_ptr<AstNode> operator!() const;
+  virtual std::unique_ptr<AstNode> operator~() const;
+  virtual std::unique_ptr<AstNode> operator-() const;
 
   bool HasAttribute(const std::string &attr) const {
     return std::find(attributes.begin(), attributes.end(), attr) != attributes.end();
@@ -145,6 +168,8 @@ struct AstExpression : public AstNode {
     : child(move(child)), should_clear_stack(should_clear_stack),
     AstNode(location, module, AstType::ast_type_expression) {
   }
+
+  std::unique_ptr<AstNode> Optimize() const override;
 };
 
 struct AstBinaryOp : public AstNode {
@@ -158,6 +183,8 @@ struct AstBinaryOp : public AstNode {
     : left(move(left)), right(move(right)), op(op),
     AstNode(location, module, ast_type_binop) {
   }
+
+  std::unique_ptr<AstNode> Optimize() const override;
 };
 
 struct AstUnaryOp : public AstNode {
@@ -169,6 +196,8 @@ struct AstUnaryOp : public AstNode {
     : child(move(child)), op(op),
     AstNode(location, module, ast_type_unop) {
   }
+
+  std::unique_ptr<AstNode> Optimize() const override;
 };
 
 struct AstArrayAccess : public AstNode {
@@ -261,6 +290,28 @@ struct AstInteger : public AstNode {
   AstInteger(SourceLocation location, AstNode *module, AVMInteger_t value)
     : value(value), AstNode(location, module, ast_type_integer) {
   }
+
+  std::unique_ptr<AstNode> operator+(const std::unique_ptr<AstNode> &rhs) const override;
+  std::unique_ptr<AstNode> operator-(const std::unique_ptr<AstNode> &rhs) const override;
+  std::unique_ptr<AstNode> operator*(const std::unique_ptr<AstNode> &rhs) const override;
+  std::unique_ptr<AstNode> operator/(const std::unique_ptr<AstNode> &rhs) const override;
+  std::unique_ptr<AstNode> operator%(const std::unique_ptr<AstNode> &rhs) const override;
+  std::unique_ptr<AstNode> operator^(const std::unique_ptr<AstNode> &rhs) const override;
+  std::unique_ptr<AstNode> operator&(const std::unique_ptr<AstNode> &rhs) const override;
+  std::unique_ptr<AstNode> operator|(const std::unique_ptr<AstNode> &rhs) const override;
+  std::unique_ptr<AstNode> operator<<(const std::unique_ptr<AstNode> &rhs) const override;
+  std::unique_ptr<AstNode> operator>>(const std::unique_ptr<AstNode> &rhs) const override;
+  std::unique_ptr<AstNode> operator&&(const std::unique_ptr<AstNode> &rhs) const override;
+  std::unique_ptr<AstNode> operator||(const std::unique_ptr<AstNode> &rhs) const override;
+  std::unique_ptr<AstNode> operator==(const std::unique_ptr<AstNode> &rhs) const override;
+  std::unique_ptr<AstNode> operator!=(const std::unique_ptr<AstNode> &rhs) const override;
+  std::unique_ptr<AstNode> operator<(const std::unique_ptr<AstNode> &rhs) const override;
+  std::unique_ptr<AstNode> operator>(const std::unique_ptr<AstNode> &rhs) const override;
+  std::unique_ptr<AstNode> operator<=(const std::unique_ptr<AstNode> &rhs) const override;
+  std::unique_ptr<AstNode> operator>=(const std::unique_ptr<AstNode> &rhs) const override;
+  std::unique_ptr<AstNode> operator!() const override;
+  std::unique_ptr<AstNode> operator~() const override;
+  std::unique_ptr<AstNode> operator-() const override;
 };
 
 struct AstFloat : public AstNode {
@@ -269,6 +320,19 @@ struct AstFloat : public AstNode {
   AstFloat(SourceLocation location, AstNode *module, AVMFloat_t value)
     : value(value), AstNode(location, module, ast_type_float) {
   }
+
+  std::unique_ptr<AstNode> operator+(const std::unique_ptr<AstNode> &rhs) const override;
+  std::unique_ptr<AstNode> operator-(const std::unique_ptr<AstNode> &rhs) const override;
+  std::unique_ptr<AstNode> operator*(const std::unique_ptr<AstNode> &rhs) const override;
+  std::unique_ptr<AstNode> operator/(const std::unique_ptr<AstNode> &rhs) const override;
+  std::unique_ptr<AstNode> operator==(const std::unique_ptr<AstNode> &rhs) const override;
+  std::unique_ptr<AstNode> operator!=(const std::unique_ptr<AstNode> &rhs) const override;
+  std::unique_ptr<AstNode> operator<(const std::unique_ptr<AstNode> &rhs) const override;
+  std::unique_ptr<AstNode> operator>(const std::unique_ptr<AstNode> &rhs) const override;
+  std::unique_ptr<AstNode> operator<=(const std::unique_ptr<AstNode> &rhs) const override;
+  std::unique_ptr<AstNode> operator>=(const std::unique_ptr<AstNode> &rhs) const override;
+  std::unique_ptr<AstNode> operator!() const override;
+  std::unique_ptr<AstNode> operator-() const override;
 };
 
 struct AstString : public AstNode {

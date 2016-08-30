@@ -1,6 +1,8 @@
 #ifndef ASCRIPT_H
 #define ASCRIPT_H
 
+#include <loadlib.h>
+
 #include <string>
 #include <fstream>
 

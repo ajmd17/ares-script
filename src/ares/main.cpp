@@ -49,8 +49,7 @@ int main(int argc, char *argv[]) {
 
     ares::Script script(code, input_file, output_file);
     if (!script.Run()) {
-      std::cout << "Error: The script could not be compiled.\n";
-      std::system("pause");
+      system("pause");
       return 1;
     }
 
@@ -63,6 +62,5 @@ int main(int argc, char *argv[]) {
     std::cout << "\t-o <filepath>: Output bytecode to a specified file.\n";
     std::cout << "\t-code <code string>: Execute code from a string, rather than from a file.\n";
   }
-  std::system("pause");
   return 0;
 }

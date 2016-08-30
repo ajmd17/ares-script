@@ -10,6 +10,16 @@ FileByteStream::FileByteStream(const std::string &filepath, std::streampos begin
 
   max_pos = file->tellg();
   file->seekg(begin);
+
+  char magic[32] = { '\0' };
+  file->read(magic, strlen(ARES_MAGIC));
+  if (strcmp(magic, ARES_MAGIC) != 0) {
+    // not a valid bytecode file
+  }
+  // read version
+  char version[ARES_VERSION_LEN] = { '\0' };
+  file->read(version, ARES_VERSION_LEN);
+
   pos = file->tellg();
 }
 

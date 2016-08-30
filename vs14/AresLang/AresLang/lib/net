@@ -1,0 +1,8 @@
+module Net;
+
+# load library file
+var lib = System.loadlib("native/TestPlugin.dll");
+# load function from library
+var func1 = System.loadfunc(lib, "Push42");
+
+print("func1() = ", func1(), "\n");

@@ -13,6 +13,12 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Header Files\platform">
+      <UniqueIdentifier>{3c88e4ea-7f93-487b-9f00-92cc73a0cf23}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\platform">
+      <UniqueIdentifier>{63694378-d222-4aae-8620-60371ca37379}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\src\ares\ascript.cpp">
@@ -24,6 +30,9 @@
     <ClCompile Include="..\..\..\src\ares\rtlib.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\src\ares\platform\loadlib_windows.cpp">
+      <Filter>Source Files\platform</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\include\ares\ascript.h">
@@ -31,6 +40,12 @@
     </ClInclude>
     <ClInclude Include="..\..\..\include\ares\rtlib.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\ares\loadlib.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\ares\platform\loadlib_windows.h">
+      <Filter>Header Files\platform</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

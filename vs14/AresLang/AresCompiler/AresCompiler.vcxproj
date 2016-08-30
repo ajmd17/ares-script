@@ -163,6 +163,12 @@
     <ClCompile Include="..\..\..\src\compiler\acompiler.cpp" />
     <ClCompile Include="..\..\..\src\compiler\alexer.cpp" />
     <ClCompile Include="..\..\..\src\compiler\aparser.cpp" />
+    <ClCompile Include="..\..\..\src\compiler\ast\AstBinaryOp.cpp" />
+    <ClCompile Include="..\..\..\src\compiler\ast\AstExpression.cpp" />
+    <ClCompile Include="..\..\..\src\compiler\ast\AstFloat.cpp" />
+    <ClCompile Include="..\..\..\src\compiler\ast\AstInteger.cpp" />
+    <ClCompile Include="..\..\..\src\compiler\ast\AstNode.cpp" />
+    <ClCompile Include="..\..\..\src\compiler\ast\AstUnaryOp.cpp" />
     <ClCompile Include="..\..\..\src\compiler\error.cpp" />
     <ClCompile Include="..\..\..\src\compiler\semantic.cpp" />
     <ClCompile Include="..\..\..\src\compiler\token.cpp" />

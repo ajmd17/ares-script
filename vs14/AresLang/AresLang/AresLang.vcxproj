@@ -154,6 +154,7 @@
   <ItemGroup>
     <ClCompile Include="..\..\..\src\ares\ascript.cpp" />
     <ClCompile Include="..\..\..\src\ares\main.cpp" />
+    <ClCompile Include="..\..\..\src\ares\platform\loadlib_windows.cpp" />
     <ClCompile Include="..\..\..\src\ares\rtlib.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -166,6 +167,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\include\ares\ascript.h" />
+    <ClInclude Include="..\..\..\include\ares\loadlib.h" />
+    <ClInclude Include="..\..\..\include\ares\platform\loadlib_windows.h" />
     <ClInclude Include="..\..\..\include\ares\rtlib.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -1,0 +1,19 @@
+module Arui;
+
+var handle;
+func loadLibraries {
+  # load freetype6 library
+  System.loadlib("native/arui/freetype6.dll");
+  # load glew32 library
+  System.loadlib("native/arui/glew32.dll");
+  # load Arui library
+  handle = System.loadlib("native/arui/Arui.dll");
+}
+
+# initialize
+loadLibraries();
+
+# load functions from Arui
+const init = System.loadfunc(handle, "InitArui");
+const destroy = System.loadfunc(handle, "DestroyArui");
+const button = System.loadfunc(handle, "AddButton");

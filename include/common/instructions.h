@@ -1,6 +1,10 @@
 #ifndef INSTRUCTIONS_H
 #define INSTRUCTIONS_H
 
+#define ARES_MAGIC "AR"
+#define ARES_VERSION "13" // 1.3
+#define ARES_VERSION_LEN 2
+
 namespace avm {
 typedef uint8_t OpCode_t;
 enum OpCodes : OpCode_t {

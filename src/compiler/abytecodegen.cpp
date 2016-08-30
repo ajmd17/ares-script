@@ -11,6 +11,10 @@ BytecodeGenerator::BytecodeGenerator(const InstructionStream &bstream) : bstream
 }
 
 bool BytecodeGenerator::Emit(std::ostream &filestream) {
+  // write signature
+  filestream.write(ARES_MAGIC, strlen(ARES_MAGIC));
+  filestream.write(ARES_VERSION, ARES_VERSION_LEN);
+
   for (auto &&ins : bstream.instructions) {
     switch (ins.data.back()[0]) {
     // FALLTHROUGH

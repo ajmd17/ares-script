@@ -197,7 +197,7 @@ void SemanticAnalyzer::Accept(AstImport *node) {
     std::ifstream file(path);
 
     if (!file.is_open()) {
-      ErrorMsg(msg_import_not_found, node->location, node->import_str);
+      ErrorMsg(msg_import_not_found, node->location, node->import_str, path);
     } else {
       std::string str((std::istreambuf_iterator<char>(file)),
         std::istreambuf_iterator<char>());
@@ -288,6 +288,14 @@ void SemanticAnalyzer::Accept(AstBinaryOp *node) {
           right_side = expr_ast->child.get();
         }
 
+        std::unique_ptr<AstNode> right_side_opt = nullptr;
+        if (config::optimize_constant_folding) {
+          right_side_opt = right_side->Optimize();
+          if (right_side_opt != nullptr) {
+            right_side = right_side_opt.get();
+          }
+        }
+
         casted->symbol_ptr->current_value = right.get();
         casted->current_value = casted->symbol_ptr->current_value;
         switch (right_side->type) {
@@ -369,7 +377,7 @@ void SemanticAnalyzer::Accept(AstModuleAccess *node) {
 }
 
 void SemanticAnalyzer::Accept(AstVariableDeclaration *node) {
-  node->is_const = node->HasAttribute("const");
+  //node->is_const = node->HasAttribute("const");
 
   std::string var_name = state_ptr->MakeVariableName(node->name, node->module);
   if (FindVariable(var_name, true)) {
@@ -383,18 +391,30 @@ void SemanticAnalyzer::Accept(AstVariableDeclaration *node) {
     info.is_const = node->is_const;
     info.current_value = node->assignment.get();
 
-    if (node->assignment->type == ast_type_expression) {
-      auto *expr_casted = static_cast<AstExpression*>(node->assignment.get());
-      switch (expr_casted->child->type) {
-      case ast_type_integer:
-      case ast_type_float:
-      case ast_type_string:
-        info.is_literal = true;
-        break;
-      default:
-        info.is_literal = false;
-        break;
+    auto *right_side = info.current_value;
+    if (info.current_value->type == ast_type_expression) {
+      // get inner child
+      auto *expr_ast = static_cast<AstExpression*>(info.current_value);
+      right_side = expr_ast->child.get();
+    }
+
+    std::unique_ptr<AstNode> right_side_opt = nullptr;
+    if (config::optimize_constant_folding) {
+      right_side_opt = right_side->Optimize();
+      if (right_side_opt != nullptr) {
+        right_side = right_side_opt.get();
       }
+    }
+
+    switch (right_side->type) {
+    case ast_type_integer:
+    case ast_type_float:
+    case ast_type_string:
+      info.is_literal = true;
+      break;
+    default:
+      info.is_literal = false;
+      break;
     }
 
     state_ptr->current_level().locals.push_back({ var_name, info });
@@ -468,9 +488,8 @@ void SemanticAnalyzer::Accept(AstVariable *node) {
       }
 
       // do not increment use count for const literals, they will be inlined
-      if (!(config::optimize_constant_folding && 
+      if (!(config::optimize_constant_folding &&
         node->is_const && node->is_literal && node->current_value != nullptr)) {
-
         IncrementUseCount(ptr->node);
       }
     }
