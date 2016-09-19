@@ -58,11 +58,9 @@ public:
   bool Eof() const;
 
 private:
-  /*InstructionStream stream;*/
-  size_t pos;// , sub_index;
+  size_t pos;
   size_t max_pos;
   std::stringstream stream;
-  //std::vector<char> data;
 };
 
 } // namespace avm

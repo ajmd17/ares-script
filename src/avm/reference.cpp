@@ -3,16 +3,23 @@
 
 namespace avm {
 
-Reference::Reference() : ref(nullptr) {
+Reference::Reference() 
+    : ref(nullptr) {
 }
 
-Reference::Reference(Object * &ref) : ref(&ref) {
+Reference::Reference(Object *&ref) 
+    : ref(&ref) {
 }
 
-Reference::Reference(const Reference &other) : ref(other.ref) {
+Reference::Reference(const Reference &other) 
+    : ref(other.ref) {
 }
 
-Object * &Reference::Ref() {
+Object **Reference::Ptr() const {
+  return ref;
+}
+
+Object *&Reference::Ref() {
   return *ref;
 }
 

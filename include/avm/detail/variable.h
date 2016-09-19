@@ -4,7 +4,7 @@
 #include <detail/dynamic.h>
 #include <detail/object.h>
 #include <detail/heap.h>
-#include <common/types.h>
+#include <detail/StackValue.h>
 
 #include <memory>
 #include <vector>
@@ -100,10 +100,7 @@ protected:
   /** Holds a heap value */
   Dynamic value;
   /** Numeric types are stored on the stack */
-  union {
-    AVMInteger_t int_value;
-    AVMFloat_t float_value;
-  } stack_value;
+  StackValue stack_value;
 
 private:
   template <typename Decayed, typename T>

@@ -734,10 +734,11 @@ void Compiler::Accept(AstRange *node) {
 }
 
 size_t Compiler::UseCount(AstNode *node) {
-  if (state.use_counts.find(node) == state.use_counts.end())
-    return 0;
-  else
-    return state.use_counts[node];
+    if (state.use_counts.find(node) == state.use_counts.end()) {
+        return 0;
+    } else {
+        return state.use_counts[node];
+    }
 }
 
 void Compiler::IncreaseBlock(LevelType type) {

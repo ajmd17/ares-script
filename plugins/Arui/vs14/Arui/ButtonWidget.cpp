@@ -12,7 +12,7 @@ namespace arui {
 ButtonWidget::ButtonWidget(const std::string &text, const std::tuple<float, float, float> &textcolor,
   Texture *texture, Texture *texture_hover, Texture *texture_clicked,
   Shader *shader, int x, int y, int w, int h)
-  : state(ButtonState_normal), prevstate(ButtonState_normal), blendtime(0.0), 
+  : btnstate(ButtonState_normal), prevstate(ButtonState_normal), blendtime(0.0),
   text(text), textcolor(textcolor),
   texture(texture), texture_hover(texture_hover), texture_clicked(texture_clicked),
   Widget(shader, x, y, w, h) {
@@ -41,67 +41,67 @@ void ButtonWidget::SetTextColor(const std::tuple<float, float, float> &rgb) {
   textcolor = rgb;
 }
 
-bool ButtonWidget::TestHover(int mouse_x, int mouse_y, int offsetx, int offsety) {
+bool ButtonWidget::TestHover(avm::VMState *state, int mouse_x, int mouse_y, int offsetx, int offsety) {
   int absx = offsetx + xpos;
   int absy = offsety + ypos;
   if (mouse_x >= absx && mouse_x <= absx + width) {
     if (mouse_y >= absy && mouse_y <= absy + height) {
       // if we button is clicked or already hovered over, do nothing
-      if (state == ButtonState_normal) {
-        prevstate = state;
-        state = ButtonState_hover;
+      if (btnstate == ButtonState_normal) {
+        prevstate = btnstate;
+        btnstate = ButtonState_hover;
         blendtime = 0.0;
-        Hover();
+        Hover(state);
       }
       return true;
     }
   }
 
-  if (state == ButtonState_hover) {
-    prevstate = state;
-    state = ButtonState_normal;
+  if (btnstate == ButtonState_hover) {
+    prevstate = btnstate;
+    btnstate = ButtonState_normal;
     blendtime = 0.0;
   }
   return false;
 }
 
-void ButtonWidget::Hover() {
+void ButtonWidget::Hover(avm::VMState *state) {
 }
 
-bool ButtonWidget::TestClick(int mouse_x, int mouse_y, int offsetx, int offsety) {
+bool ButtonWidget::TestClick(avm::VMState *state, int mouse_x, int mouse_y, int offsetx, int offsety) {
   int absx = offsetx + xpos;
   int absy = offsety + ypos;
   if (mouse_x >= absx && mouse_x <= absx + width) {
     if (mouse_y >= absy && mouse_y <= absy + height) {
-      prevstate = state;
-      state = ButtonState_clicked;
+      prevstate = btnstate;
+      btnstate = ButtonState_clicked;
       blendtime = 0.0;
-      Click();
+      Click(state);
       return true;
     }
   }
   return false;
 }
 
-void ButtonWidget::Click() {
+void ButtonWidget::Click(avm::VMState *state) {
 }
 
-bool ButtonWidget::TestUnclick(int mouse_x, int mouse_y, int offsetx, int offsety) {
+bool ButtonWidget::TestUnclick(avm::VMState *state, int mouse_x, int mouse_y, int offsetx, int offsety) {
   int absx = offsetx + xpos;
   int absy = offsety + ypos;
   if (mouse_x >= absx && mouse_x <= absx + width) {
     if (mouse_y >= absy && mouse_y <= absy + height) {
-      prevstate = state;
-      state = ButtonState_normal;
+      prevstate = btnstate;
+      btnstate = ButtonState_normal;
       blendtime = 0.0;
-      Unclick(); // trigger click events if released within button
+      Unclick(state); // trigger click events if released within button
       return true;
     }
   }
 
-  if (state == ButtonState_clicked) {
-    prevstate = state;
-    state = ButtonState_normal;
+  if (btnstate == ButtonState_clicked) {
+    prevstate = btnstate;
+    btnstate = ButtonState_normal;
     blendtime = 0.0;
     return true;
   }
@@ -109,8 +109,11 @@ bool ButtonWidget::TestUnclick(int mouse_x, int mouse_y, int offsetx, int offset
   return false;
 }
 
-void ButtonWidget::Unclick() {
+void ButtonWidget::Unclick(avm::VMState *state) {
   // perform action here
+  if (callback.Ptr()) {
+    callback.Ref()->invoke(state, 0);
+  }
 }
 
 void ButtonWidget::Draw(const Matrix4 &proj, Font *font, int offsetx, int offsety) {
@@ -144,7 +147,7 @@ void ButtonWidget::Draw(const Matrix4 &proj, Font *font, int offsetx, int offset
     texture_clicked->Use();
     shader->SetUniformInt("u_texture_clicked", 2);
 
-    shader->SetUniformInt("u_state", (int)state);
+    shader->SetUniformInt("u_state", (int)btnstate);
     shader->SetUniformInt("u_prevstate", (int)prevstate);
     shader->SetUniformFloat("u_blendtime", std::fminf((float)blendtime, 1.0));
 

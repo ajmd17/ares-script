@@ -2,6 +2,8 @@
 
 #include <avm/detail/vm_state.h>
 
+#include <string>
+
 #ifdef ARUI_EXPORTS
 #define ARUI_API __declspec(dllexport)
 #else
@@ -11,3 +13,5 @@
 extern "C" ARUI_API void InitArui(avm::VMState *state, avm::Object **args, uint32_t argc);
 extern "C" ARUI_API void DestroyArui(avm::VMState *state, avm::Object **args, uint32_t argc);
 extern "C" ARUI_API void AddButton(avm::VMState *state, avm::Object **args, uint32_t argc);
+
+std::string CreateCallbackName();

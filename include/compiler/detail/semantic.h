@@ -69,7 +69,7 @@ private:
   /* Returns true if variable was found, and if it is native,
   the number of arguments match.
   A pointer to the variable is given. */
-  bool FindVariable(const std::string &, size_t, bool, Symbol *&);
+  //bool FindVariable(const std::string &, size_t, bool, Symbol *&);
 
   void IncreaseBlock(LevelType);
   void DecreaseBlock();

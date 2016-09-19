@@ -11,7 +11,10 @@ public:
   explicit Reference(Object * &ref);
   Reference(const Reference &other);
 
-  Object * &Ref();
+  // returns the actual pointer held inside.
+  Object **Ptr() const;
+
+  Object *&Ref();
   const Object *const &Ref() const;
 
   void DeleteObject();
@@ -19,6 +22,6 @@ public:
 protected:
   Object **ref;
 };
-}
+} // namespace avm
 
 #endif

@@ -153,6 +153,7 @@
     <ClInclude Include="..\..\..\include\avm\detail\native_function.h" />
     <ClInclude Include="..\..\..\include\avm\detail\object.h" />
     <ClInclude Include="..\..\..\include\avm\detail\reference.h" />
+    <ClInclude Include="..\..\..\include\avm\detail\StackValue.h" />
     <ClInclude Include="..\..\..\include\avm\detail\variable.h" />
     <ClInclude Include="..\..\..\include\avm\detail\vm_state.h" />
     <ClInclude Include="stdafx.h" />

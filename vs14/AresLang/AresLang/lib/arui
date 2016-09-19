@@ -1,19 +1,27 @@
 module Arui;
 
+enum Anchor {
+  Anchor_none = 0x00,
+  Anchor_left = 0x01,
+  Anchor_right = 0x02,
+  Anchor_top = 0x04,
+  Anchor_bottom = 0x08
+}
+
 var handle;
 func loadLibraries {
   # load freetype6 library
-  System.loadlib("native/arui/freetype6.dll");
+  Runtime.loadlib("native/arui/freetype6.dll");
   # load glew32 library
-  System.loadlib("native/arui/glew32.dll");
+  Runtime.loadlib("native/arui/glew32.dll");
   # load Arui library
-  handle = System.loadlib("native/arui/Arui.dll");
+  handle = Runtime.loadlib("native/arui/Arui.dll");
 }
 
 # initialize
 loadLibraries();
 
 # load functions from Arui
-const init = System.loadfunc(handle, "InitArui");
-const destroy = System.loadfunc(handle, "DestroyArui");
-const button = System.loadfunc(handle, "AddButton");
+const init = Runtime.loadfunc(handle, "InitArui");
+const destroy = Runtime.loadfunc(handle, "DestroyArui");
+const button = Runtime.loadfunc(handle, "AddButton");

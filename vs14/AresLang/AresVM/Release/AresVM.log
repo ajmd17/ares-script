@@ -1,17 +1,34 @@
-﻿  avm.cpp
-..\..\..\src\avm\avm.cpp(382): warning C4244: '=': conversion from 'uint64_t' to 'unsigned long', possible loss of data
-..\..\..\src\avm\avm.cpp(503): warning C4244: 'argument': conversion from 'avm::AVMInteger_t' to 'size_t', possible loss of data
-..\..\..\src\avm\avm.cpp(609): warning C4800: 'uint8_t': forcing value to bool 'true' or 'false' (performance warning)
-C:\Users\User\Documents\AresLangProject\include\avm\detail/variable.h(113): warning C4800: 'avm::AVMInteger_t': forcing value to bool 'true' or 'false' (performance warning)
+﻿  stdafx.cpp
+  arraylist.cpp
+  avm.cpp
+..\..\..\src\avm\avm.cpp(385): warning C4244: '=': conversion from 'uint64_t' to 'unsigned long', possible loss of data
+..\..\..\src\avm\avm.cpp(506): warning C4244: 'argument': conversion from 'avm::AVMInteger_t' to 'size_t', possible loss of data
+..\..\..\src\avm\avm.cpp(612): warning C4800: 'uint8_t': forcing value to bool 'true' or 'false' (performance warning)
+C:\Users\User\Documents\AresLangProject\include\avm\detail/variable.h(110): warning C4800: 'avm::AVMInteger_t': forcing value to bool 'true' or 'false' (performance warning)
   C:\Users\User\Documents\AresLangProject\include\avm\detail/variable.h(96): note: see reference to function template instantiation 'bool avm::Variable::GetValue<Decayed,T>(void)' being compiled
           with
           [
               T=bool
           ]
-  ..\..\..\src\avm\avm.cpp(307): note: see reference to function template instantiation 'T avm::Variable::Cast<bool>(void)' being compiled
+  ..\..\..\src\avm\avm.cpp(310): note: see reference to function template instantiation 'T avm::Variable::Cast<bool>(void)' being compiled
           with
           [
               T=bool
           ]
-C:\Users\User\Documents\AresLangProject\include\avm\detail/variable.h(115): warning C4800: 'avm::AVMFloat_t': forcing value to bool 'true' or 'false' (performance warning)
+C:\Users\User\Documents\AresLangProject\include\avm\detail/variable.h(112): warning C4800: 'avm::AVMFloat_t': forcing value to bool 'true' or 'false' (performance warning)
+  byte_stream.cpp
+..\..\..\src\avm\byte_stream.cpp(31): warning C4244: 'return': conversion from 'std::streamoff' to 'size_t', possible loss of data
+..\..\..\src\avm\byte_stream.cpp(35): warning C4244: 'return': conversion from 'std::streamoff' to 'size_t', possible loss of data
+..\..\..\src\avm\byte_stream.cpp(72): warning C4244: '=': conversion from 'std::streamoff' to 'size_t', possible loss of data
+..\..\..\src\avm\byte_stream.cpp(74): warning C4244: '=': conversion from 'std::streamoff' to 'size_t', possible loss of data
+  check_args.cpp
+  frame.cpp
+  function.cpp
+..\..\..\src\avm\function.cpp(23): warning C4244: 'argument': conversion from 'uint64_t' to 'unsigned long', possible loss of data
+  heap.cpp
+  object.cpp
+  reference.cpp
+  variable.cpp
+..\..\..\src\avm\variable.cpp(119): warning C4244: '=': conversion from 'double' to 'avm::AVMInteger_t', possible loss of data
+  vm_state.cpp
   AresVM.vcxproj -> C:\Users\User\Documents\AresLangProject\vs14\AresLang\Release\AresVM.lib

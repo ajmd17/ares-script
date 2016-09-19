@@ -2,7 +2,9 @@
 #include <iostream>
 
 namespace avm {
-Heap::Heap() : head(nullptr), num_objects(0) {
+Heap::Heap() 
+  : head(nullptr), 
+    num_objects(0) {
 }
 
 Heap::~Heap() {

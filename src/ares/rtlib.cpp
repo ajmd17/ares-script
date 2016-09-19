@@ -2,10 +2,42 @@
 #include <iostream>
 #include <cstdlib>
 #include <sstream>
+#include <iomanip>
 #include <detail/native_function.h>
 
 namespace ares {
 LibLoader *RuntimeLib::libloader = nullptr;
+
+/*template <typename T>
+bool ConvertData(VMState *state, Variable *var, T &out) {
+  std::stringstream ss;
+  try {
+    switch (var->type) {
+    case Variable::Type_int:
+      ss << (T)var->Cast<AVMInteger_t&>();
+      break;
+    case Variable::Type_float:
+      ss << (T)var->Cast<AVMFloat_t&>();
+      break;
+    case Variable::Type_string:
+    {
+      AVMString_t &str = var->Cast<AVMString_t&>();
+      for (char ch : str) {
+        ss << (T)ch;
+      }
+      break;
+    }
+    }
+  } catch (...) {
+    state->HandleException(ConversionException(var->TypeString(), typeid(T).name()));
+    return false;
+  }
+
+  if (!(ss >> out)) {
+    state->HandleException(ConversionException(var->TypeString(), typeid(T).name()));
+  }
+  return false;
+}*/
 
 void RuntimeLib::FileIO_open(VMState *state, Object **args, uint32_t argc) {
   if (CheckArgs(state, 2, argc)) {
@@ -146,7 +178,7 @@ void RuntimeLib::FileIO_close(VMState *state, Object **args, uint32_t argc) {
   }
 }
 
-void RuntimeLib::System_loadlib(VMState *state, Object **args, uint32_t argc) {
+void RuntimeLib::Runtime_loadlib(VMState *state, Object **args, uint32_t argc) {
   if (CheckArgs(state, 1, argc)) {
     if (libloader == nullptr) {
       state->HandleException(Exception("library loader could not be initialized"));
@@ -181,7 +213,7 @@ void RuntimeLib::System_loadlib(VMState *state, Object **args, uint32_t argc) {
   }
 }
 
-void RuntimeLib::System_loadfunc(VMState *state, Object **args, uint32_t argc) {
+void RuntimeLib::Runtime_loadfunc(VMState *state, Object **args, uint32_t argc) {
   if (CheckArgs(state, 2, argc)) {
     if (libloader == nullptr) {
       state->HandleException(Exception("library loader could not be initialized"));
@@ -238,13 +270,34 @@ void RuntimeLib::System_loadfunc(VMState *state, Object **args, uint32_t argc) {
   }
 }
 
-void RuntimeLib::Console_println(VMState *state, Object **args, uint32_t argc) {
-  if (CheckArgs(state, 1, argc)) {
-    std::puts(args[0]->ToString().c_str());
-    auto ref = Reference(*state->heap.AllocObject<Variable>());
-    ref.Ref()->flags |= Object::FLAG_TEMPORARY;
-    state->stack.push_back(ref);
+void RuntimeLib::Runtime_invoke(VMState *state, Object **args, uint32_t argc) {
+  if (argc == 0) {
+    state->HandleException(avm::Exception("invoke() requires at least 1 parameter"));
+  } else {
+    auto *callee = args[0];
+
+    // push arguments to stack
+    for (uint32_t i = 1; i < argc; i++) {
+      state->stack.push_back(Reference(args[i]));
+    }
+
+    callee->invoke(state, argc - 1);
+    // leave pushed value on stack here
   }
+}
+
+void RuntimeLib::Console_println(VMState *state, Object **args, uint32_t argc) {
+  //if (CheckArgs(state, 1, argc)) {  /* No need to check args, variadic */
+
+  for (uint32_t i = 0; i < argc; i++) {
+    std::cout << args[i]->ToString();
+  }
+  std::cout << "\n";
+
+  auto ref = Reference(*state->heap.AllocObject<Variable>());
+  ref.Ref()->flags |= Object::FLAG_TEMPORARY;
+  state->stack.push_back(ref);
+  //}
 }
 
 void RuntimeLib::Console_readln(VMState *state, Object **args, uint32_t argc) {
@@ -261,6 +314,93 @@ void RuntimeLib::Console_readln(VMState *state, Object **args, uint32_t argc) {
     state->stack.push_back(ref);
   }
 }
+
+/*void RuntimeLib::Console_printf(VMState *state, Object **args, uint32_t argc) {
+  if (argc == 0) {
+    state->HandleException(avm::Exception("printf() requires at least 1 parameter"));
+  } else {
+    auto *fmt = args[0];
+
+    // arg1 should be handle, arg2 should be function name
+    Variable *var_fmt = dynamic_cast<Variable*>(args[0]);
+    if (var_fmt == nullptr) {
+      state->HandleException(avm::TypeException(args[0]->TypeString()));
+      return;
+    }
+
+    bool good = true;
+    AVMString_t fmt_str;
+
+    if (var_fmt->type == Variable::Type_string) {
+      fmt_str = var_fmt->Cast<AVMString_t>();
+    } else {
+      state->HandleException(ConversionException(var_fmt->TypeString(), "string"));
+      good = false;
+    }
+
+    if (good) {
+
+      size_t arg = 1;
+      for (size_t i = 0; i < fmt_str.length(); i++) {
+        if (arg < argc && fmt_str[i] == '%') {
+
+          std::string str = args[arg]->ToString();
+
+          // read next char
+          if (fmt_str[i + 1] == 's') {
+             std::cout << str.c_str();
+            ++i;
+          } else if (fmt_str[i + 1] == 'd') {
+            std::cout << std::stoll(str, nullptr, 10);
+            ++i;
+          } else if (fmt_str[i + 1] == 'x') {
+            std::cout << std::hex << std::stoll(str, nullptr, 10);
+            ++i;
+          } else if (fmt_str[i + 1] == 'X') {
+            std::cout << std::hex << std::uppercase << std::stoll(str, nullptr, 10);
+            ++i;
+          } else if (fmt_str[i + 1] == 'f') {
+            std::cout << std::stof(str);
+            ++i;
+          } else if (isdigit(fmt_str[i + 1])) {
+            // read until no longer digit
+            std::string width;
+            while (isdigit(fmt_str[++i])) {
+              width += fmt_str[i];
+            }
+
+            if (fmt_str[i] == '.') {
+
+              std::string precision;
+              while (isdigit(fmt_str[++i])) {
+                precision += fmt_str[i];
+              }
+
+              std::cout << std::setw(std::stoi(width));
+              std::setprecision(std::stoi(precision));
+              std::cout << std::stof(str);
+            } else {
+              std::cout << std::setw(std::stoi(width));
+              std::cout << std::stof(str);
+            }
+            ++i;
+          }
+          ++arg;
+        } else {
+          std::cout << fmt_str[i];
+        }
+      }
+
+      auto ref = Reference(*state->heap.AllocNull());
+      auto result = new Variable();
+      result->Assign(fmt_str.length());
+      result->flags |= Object::FLAG_CONST;
+      result->flags |= Object::FLAG_TEMPORARY;
+      ref.Ref() = result;
+      state->stack.push_back(ref);
+    }
+  }
+}*/
 
 void RuntimeLib::Console_system(VMState *state, Object **args, uint32_t argc) {
   if (CheckArgs(state, 1, argc)) {

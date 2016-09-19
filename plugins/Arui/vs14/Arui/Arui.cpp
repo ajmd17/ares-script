@@ -8,6 +8,7 @@
 #include "Math/matrix_util.h"
 
 #include <detail/variable.h>
+#include <detail/function.h>
 #include <detail/check_args.h>
 
 #include <GL/glew.h>
@@ -37,8 +38,10 @@ Matrix4 view_mat;
 Matrix4 proj_mat;
 
 double mouse_x = 0, mouse_y = 0;
+int window_width = 0, window_height = 0;
 
 std::vector<Widget*> widgets;
+avm::VMState *avm_state = nullptr;
 
 static GLFWwindow *window = nullptr;
 std::thread render_thread;
@@ -49,8 +52,57 @@ std::queue<std::function<void()>> _queue; // once gl starts these will run
 bool can_render = true;
 bool opengl_init = false;
 
+void Render();
+
 static void ErrorCallback(int error, const char *description) {
   std::cout << "Arui Error: " << description << "\n";
+}
+
+static void WindowResizedCallback(GLFWwindow *window, int width, int height) {
+  std::printf("resize %d %d\n", width, height);
+
+  if (window_width != width) {
+    // width resized
+    int diff = window_width - width;
+    mtx.lock();
+    for (auto &&widget : widgets) {
+      if (widget != nullptr) {
+        if (widget->anchor == Anchor_none) {
+          widget->SetPosition(widget->GetX() - diff, widget->GetY());
+        } else {
+          if (widget->anchor & Anchor_left) {
+            widget->SetSize(widget->GetWidth() - diff, widget->GetHeight());
+          }
+
+          if (widget->anchor & Anchor_right) {
+            //widget->SetPosition(widget->GetX() + diff, widget->GetY());
+            widget->SetSize(widget->GetWidth() - diff, widget->GetHeight());
+          }
+        }
+      }
+    }
+    mtx.unlock();
+  }
+  window_width = width;
+
+  if (window_height != height) {
+    // height resized
+    int diff = window_height - height;
+    mtx.lock();
+    for (auto &&widget : widgets) {
+      if (widget != nullptr) {
+        if (widget->anchor == Anchor_none) {
+          widget->SetPosition(widget->GetX(), widget->GetY() - diff);
+        } else {
+        }
+      }
+    }
+    mtx.unlock();
+  }
+  window_height = height;
+
+  // Call Render() upon resize.
+  Render();
 }
 
 static void MouseMoveCallback(GLFWwindow *window, double xpos, double ypos) {
@@ -58,7 +110,7 @@ static void MouseMoveCallback(GLFWwindow *window, double xpos, double ypos) {
   mtx.lock();
   for (auto &&widget : widgets) {
     if (widget != nullptr) {
-      widget->TestHover((int)xpos, (int)ypos, 0, 0);
+      widget->TestHover(avm_state, (int)xpos, (int)ypos, 0, 0);
     }
   }
   mtx.unlock();
@@ -70,7 +122,7 @@ static void MouseClickCallback(GLFWwindow* window, int button, int action, int m
     mtx.lock();
     for (auto &&widget : widgets) {
       if (widget != nullptr) {
-        widget->TestClick((int)mouse_x, (int)mouse_y, 0, 0);
+        widget->TestClick(avm_state, (int)mouse_x, (int)mouse_y, 0, 0);
       }
     }
     mtx.unlock();
@@ -79,7 +131,7 @@ static void MouseClickCallback(GLFWwindow* window, int button, int action, int m
     mtx.lock();
     for (auto &&widget : widgets) {
       if (widget != nullptr) {
-        widget->TestUnclick((int)mouse_x, (int)mouse_y, 0, 0);
+        widget->TestUnclick(avm_state, (int)mouse_x, (int)mouse_y, 0, 0);
       }
     }
     mtx.unlock();
@@ -90,38 +142,41 @@ static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, i
 }
 
 static void Render() {
-  glfwMakeContextCurrent(window);
-  while (!glfwWindowShouldClose(window) && can_render) {
-    int width, height;
-    glfwGetWindowSize(window, &width, &height);
+  glViewport(0, 0, window_width, window_height);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    glViewport(0, 0, width, height);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  glfwGetCursorPos(window, &mouse_x, &mouse_y);
 
-    glfwGetCursorPos(window, &mouse_x, &mouse_y);
+  view_mat = Matrix4::Identity();
+  MatrixUtil::ToOrtho(proj_mat, 0, window_width, 0, window_height, -1.0f, 1.0f);
 
-    view_mat = Matrix4::Identity();
-    MatrixUtil::ToOrtho(proj_mat, 0, width, 0, height, -1.0f, 1.0f);
+  // lock mutex
+  mtx.lock();
 
-    // lock mutex
-    mtx.lock();
+  // apply projection matrix to font shader
+  text_shader->Begin();
+  text_shader->SetUniformMatrix("u_projMatrix", proj_mat);
+  text_shader->End();
 
-    // apply projection matrix to font shader
-    text_shader->Begin();
-    text_shader->SetUniformMatrix("u_projMatrix", proj_mat);
-    text_shader->End();
-
-    // render widgets
-    for (auto &&widget : widgets) {
-      if (widget != nullptr) {
-        widget->Draw(proj_mat, font, 0, height);
-      }
+  // render widgets
+  for (auto &&widget : widgets) {
+    if (widget != nullptr) {
+      widget->Draw(proj_mat, font, 0, window_height);
     }
+  }
 
-    mtx.unlock();
+  mtx.unlock();
 
-    glfwSwapBuffers(window);
-    glfwPollEvents();
+  glfwSwapBuffers(window);
+  glfwPollEvents();
+}
+
+static void Loop() {
+  glfwMakeContextCurrent(window);
+  glfwGetWindowSize(window, &window_width, &window_height);
+
+  while (!glfwWindowShouldClose(window) && can_render) {
+    Render();
 
     // sleep thread
     std::this_thread::sleep_for(std::chrono::milliseconds(50));
@@ -181,6 +236,7 @@ static bool CreateGlfwWindow() {
     return false;
   }
 
+  glfwSetWindowSizeCallback(window, WindowResizedCallback);
   glfwSetCursorPosCallback(window, MouseMoveCallback);
   glfwSetMouseButtonCallback(window, MouseClickCallback);
   glfwSetKeyCallback(window, KeyCallback);
@@ -290,14 +346,15 @@ static bool CreateGlfwWindow() {
   widgets.reserve(20);
 
   // create test widget
-  /*auto *main_panel = new PanelWidget(panel_shader, 25, 25, 256, 256);
+  auto *main_panel = new PanelWidget(panel_shader, 25, 25, 256, 256);
 
   auto *btn1 = new ButtonWidget("Click Me", std::make_tuple(1.0f, 1.0f, 1.0f),
     btn_texture, btn_texture_hover, btn_texture_clicked,
     button_shader, 12, 12, 128, 32);
-  main_panel->AddWidget(btn1);
+  btn1->anchor = Anchor_right;
+  widgets.push_back(btn1);
 
-  main_panel->AddWidget(new ButtonWidget("Squeeky Deeky", std::make_tuple(1.0f, 1.0f, 1.0f),
+  /*main_panel->AddWidget(new ButtonWidget("Squeeky Deeky", std::make_tuple(1.0f, 1.0f, 1.0f),
     btn_texture, btn_texture_hover, btn_texture_clicked,
     button_shader, 24, 64, 128, 32));
 
@@ -320,13 +377,15 @@ static bool CreateGlfwWindow() {
 
   mtx.unlock();
 
-  Render();
+  Loop();
 
   return true;
 }
 
 ARUI_API void InitArui(avm::VMState *state, avm::Object **args, uint32_t argc) {
   if (avm::CheckArgs(state, 0, argc)) {
+    avm_state = state;
+
     render_thread = std::thread(CreateGlfwWindow);
 
     auto ref = avm::Reference(*state->heap.AllocObject<avm::Variable>());
@@ -353,8 +412,9 @@ ARUI_API void AddButton(avm::VMState *state, avm::Object **args, uint32_t argc) 
       button texts
       button x
       button y
+      callback function
   */
-  if (avm::CheckArgs(state, 3, argc)) {
+  if (avm::CheckArgs(state, 4, argc)) {
     bool good = true;
 
     avm::Variable *text = dynamic_cast<avm::Variable*>(args[0]);
@@ -372,6 +432,12 @@ ARUI_API void AddButton(avm::VMState *state, avm::Object **args, uint32_t argc) 
     avm::Variable *btny = dynamic_cast<avm::Variable*>(args[2]);
     if (btny == nullptr) {
       state->HandleException(avm::TypeException(args[2]->TypeString()));
+      good = false;
+    }
+
+    avm::Func *callback = dynamic_cast<avm::Func*>(args[3]);
+    if (callback == nullptr) {
+      state->HandleException(avm::TypeException(args[3]->TypeString()));
       good = false;
     }
 
@@ -403,10 +469,19 @@ ARUI_API void AddButton(avm::VMState *state, avm::Object **args, uint32_t argc) 
       if (good) {
         mtx.lock();
 
-        auto lambda = [=] () {
-          widgets.push_back(new ButtonWidget(text_str, std::make_tuple(1.0f, 1.0f, 1.0f),
+        std::string callbackname = CreateCallbackName();
+        auto cb = callback->Clone(state);
+        // add global so that callback does not expire.
+        state->frames[0]->locals.push_back({ callbackname, cb });
+        std::cout << "add global: " << callbackname << "\n";
+
+        auto lambda = [=]() {
+          auto *btn = new ButtonWidget(text_str, std::make_tuple(1.0f, 1.0f, 1.0f),
             btn_texture, btn_texture_hover, btn_texture_clicked,
-            button_shader, btnx_i, btny_i, 128, 32));
+            button_shader, btnx_i, btny_i, 128, 32);
+
+          state->frames[0]->GetLocal(callbackname, btn->callback);
+          widgets.push_back(btn);
         };
 
         if (!opengl_init) {
@@ -425,4 +500,10 @@ ARUI_API void AddButton(avm::VMState *state, avm::Object **args, uint32_t argc) 
       }
     }
   }
+}
+
+std::string CreateCallbackName() {
+  static int gen = 0;
+  std::string res = std::string("$arui_callback") + std::to_string(gen++);
+  return res;
 }

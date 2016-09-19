@@ -84,6 +84,9 @@
     <ClInclude Include="LabelWidget.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="MenuBarWidget.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Arui.cpp">

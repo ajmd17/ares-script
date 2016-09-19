@@ -2,18 +2,23 @@ module Test;
 
 import "lib/arui"
 
-# initialize arui
-Arui.init();
-
-# add a button
-var button = Arui.button("My button", 25, 25);
-
-
 /* Standard definitions */
 alias string = Convert.toString;
 alias int = Convert.toInt;
 alias float = Convert.toFloat;
 alias bool = Convert.toBool;
+
+using Runtime.invoke;
+using Console.println;
+using Reflection.typeof;
+
+# initialize arui
+Arui.init();
+
+# add a button
+var button = Arui.button("My button", 25, 25, func() { 
+  println("click button");
+});
 
 Clock.start();
 for i: 0, 351 {
@@ -22,7 +27,24 @@ for i: 0, 351 {
   if i % 10 == 0:  print "\n";
   else:            print "\t";
 }
-print 'Elapsed time = ', Clock.stop(), '\n';
+Console.println('Elapsed time = ', Clock.stop());
+
+func closureFunction {
+  println("Call closureFunction()");
+  return func(a, b, c) {
+    println("a = ", a, " b = ", b, " c = ", c);
+    return 7;
+  }
+}
+
+print("Result = ", invoke(closureFunction(), 1, "test", 7), "\n");
+invoke (closureFunction);
+try {
+  invoke(closureFunction, 2);
+} catch {
+  # bad arguments
+  println("Error");
+}
 
 var window = object {
   title: "my window",
@@ -36,54 +58,23 @@ print("enter your name: ");
 var name = Console.readln();
 print("your name is: ", name, "\n\n");
 
-Console.system("pause");
+#Console.system("pause");
 
 #destroy arui
 Arui.destroy();
 
-/*class person {
-  var name;
-  var dateOfBirth;
-  
-  func printInfo(self) {
-    print("Name: ", self.name, "\n", 
-          "DOB: ",  self.dateOfBirth, "\n");
-  }
-}
-
-var me = new person;
-# returns:
-#  var me = object {
-#    name: null,
-#    dateOfBirth: null
-#  }
-
-me.printInfo();
-# really does:
-#  person_printInfo(me);*/
-
-
-/*using Reflection.typeof;
-using Console.println;
-
-alias int = Convert.toInt;
-alias str = Convert.toString;
-alias bool = Convert.toBool;
 
 var x0 = "hi";
 const x1 = 8 + 3.23;
 print("x1 = ", x1, "\n");
-
 print ('-x1 = ', -x1, '\n');
 
 if 1 != 4 {
   println("1 is not 4.");
-}
-
-if 1 == 1:
+} else if 1 == 1:
   println("1 is 1.");
 
-func other () {
+func other() {
   println("some other function here\n");
 }
 
@@ -109,9 +100,9 @@ func main {
       }
     }
 
-    print "vec1 = ",vec1,'\n';
-    print "vec2 = ",vec2,'\n';
-    print "vec1 + vec2 = ", addvectors(vec1,vec2), '\n\n\n';
+    print "vec1 = ", vec1, '\n';
+    print "vec2 = ", vec2, '\n';
+    print "vec1 + vec2 = ", addvectors(vec1, vec2), '\n\n\n';
 
     var andrew: object { 
       name: "andrew", 

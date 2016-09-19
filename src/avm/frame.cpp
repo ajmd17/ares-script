@@ -2,7 +2,8 @@
 
 namespace avm {
 Frame::Frame()
-  : last_cond(false), exception_occured(false) {
+  : last_cond(false), 
+    exception_occured(false) {
 }
 
 bool Frame::GetLocal(const AVMString_t &name, Reference &out) {

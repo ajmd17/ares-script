@@ -20,10 +20,12 @@ public:
   static void FileIO_read(VMState *state, Object **args, uint32_t argc); // takes 2 args
   static void FileIO_close(VMState *state, Object **args, uint32_t argc); // takes 1 args
 
-  static void System_loadlib(VMState *state, Object **args, uint32_t argc); // takes 1 args
-  static void System_loadfunc(VMState *state, Object **args, uint32_t argc); // takes 2 args
+  static void Runtime_loadlib(VMState *state, Object **args, uint32_t argc); // takes 1 args
+  static void Runtime_loadfunc(VMState *state, Object **args, uint32_t argc); // takes 2 args
+  static void Runtime_invoke(VMState *state, Object **args, uint32_t argc); // takes atleast 1 args
 
   static void Console_println(VMState *state, Object **args, uint32_t argc); // takes 1 args
+  //static void Console_printf(VMState *state, Object **args, uint32_t argc); // takes atleast 1 args
   static void Console_readln(VMState *state, Object **args, uint32_t argc); // takes 0 args
   static void Console_system(VMState *state, Object **args, uint32_t argc); // takes 1 args
 

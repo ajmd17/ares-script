@@ -961,19 +961,30 @@ std::unique_ptr<AstNode> Parser::ParseFunctionExpression() {
   Token *tok = ExpectRead(Token_keyword, Keyword_ToString(Keyword_func));
 
   std::vector<std::string> arguments;
-  if (MatchRead(Token_colon)) {
+  bool variadic = false;
+
+  if (MatchRead(Token_open_parenthesis)) {
     while (true) {
-      Token *tok = ExpectRead(Token_identifier);
-      if (!tok) {
-        return nullptr;
-      }
-      arguments.push_back(tok->value);
-      if (Peek()->type != Token_comma) {
-        break;
+      Token *tok = nullptr;
+      if (MatchRead(Token_identifier, tok)) {
+        if (variadic) {
+          ErrorMsg(msg_argument_after_varargs, Location());
+        }
+
+        arguments.push_back(tok->value);
+
+        if (MatchRead(Token_ellipsis)) {
+          variadic = true;
+        }
+
+        if (!MatchRead(Token_comma)) {
+          break;
+        }
       } else {
-        Read(); // read the comma
+        break;
       }
     }
+    ExpectRead(Token_close_parenthesis);
   }
 
   std::unique_ptr<AstNode> block = nullptr;

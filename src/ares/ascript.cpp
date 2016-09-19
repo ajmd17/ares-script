@@ -75,9 +75,10 @@ bool Script::Run() {
       .Define("write", 2)
       .Define("read", 2)
       .Define("close", 1);
-    compiler.Module("System")
+    compiler.Module("Runtime")
       .Define("loadlib", 1)
-      .Define("loadfunc", 2);
+      .Define("loadfunc", 2)
+      .Define("invoke", 1);
     compiler.Module("Reflection")
       .Define("typeof", 1);
     compiler.Module("Convert")
@@ -88,6 +89,7 @@ bool Script::Run() {
     compiler.Module("Console")
       .Define("system", 1)
       .Define("println", 1)
+     // .Define("printf", 1)
       .Define("readln", 0);
 
     if (compiler.Compile(unit.get())) {
@@ -116,13 +118,15 @@ bool Script::Run() {
       vm->BindFunction("FileIO_read", RuntimeLib::FileIO_read);
       vm->BindFunction("FileIO_close", RuntimeLib::FileIO_close);
 
-      vm->BindFunction("System_loadlib", RuntimeLib::System_loadlib);
-      vm->BindFunction("System_loadfunc", RuntimeLib::System_loadfunc);
+      vm->BindFunction("Runtime_loadlib", RuntimeLib::Runtime_loadlib);
+      vm->BindFunction("Runtime_loadfunc", RuntimeLib::Runtime_loadfunc);
+      vm->BindFunction("Runtime_invoke", RuntimeLib::Runtime_invoke);
 
       vm->BindFunction("Clock_start", Tic);
       vm->BindFunction("Clock_stop", Toc);
 
       vm->BindFunction("Console_println", RuntimeLib::Console_println);
+      //vm->BindFunction("Console_printf", RuntimeLib::Console_printf);
       vm->BindFunction("Console_readln", RuntimeLib::Console_readln);
       vm->BindFunction("Console_system", RuntimeLib::Console_system);
       

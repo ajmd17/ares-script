@@ -681,7 +681,7 @@ void SemanticAnalyzer::Accept(AstFunctionExpression *node) {
 void SemanticAnalyzer::Accept(AstFunctionCall *node) {
   Symbol *ptr = nullptr;
   std::string var_name = state_ptr->MakeVariableName(node->name, node->module);
-  if (FindVariable(var_name, node->arguments.size(), false, ptr)) {
+  if (FindVariable(var_name, false, ptr)) {
     if (ptr->is_alias) {
       node->is_alias = true;
       node->alias_to = ptr->node;
@@ -875,7 +875,7 @@ bool SemanticAnalyzer::FindVariable(const std::string &name, bool only_this_scop
   return false;
 }
 
-bool SemanticAnalyzer::FindVariable(const std::string &name, size_t nargs, bool only_this_scope, Symbol *&out) {
+/*bool SemanticAnalyzer::FindVariable(const std::string &name, size_t nargs, bool only_this_scope, Symbol *&out) {
   // start at current level
   int start = state_ptr->level;
   while (start >= compiler_global_level) {
@@ -903,7 +903,7 @@ bool SemanticAnalyzer::FindVariable(const std::string &name, size_t nargs, bool 
     --start;
   }
   return false;
-}
+}*/
 
 void SemanticAnalyzer::IncreaseBlock(LevelType type) {
   LevelInfo level;

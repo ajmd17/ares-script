@@ -212,7 +212,10 @@ void VMInstance::SuggestGC() {
   DebugLog("suggest gc");
   if (state->heap.NumObjects() >= state->max_objects) {
     GC();
-    state->max_objects += VMState::GC_MAX_OBJECTS_DEFAULT;
+
+    if (state->max_objects < GC_THRESHOLD_MAX) {
+      state->max_objects += GC_THRESHOLD_STEP;
+    }
   }
 }
 

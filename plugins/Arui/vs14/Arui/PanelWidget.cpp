@@ -29,14 +29,14 @@ void PanelWidget::AddWidget(Widget *widget) {
   children.push_back(widget);
 }
 
-bool PanelWidget::TestHover(int mouse_x, int mouse_y, int offsetx, int offsety) {
+bool PanelWidget::TestHover(avm::VMState *state, int mouse_x, int mouse_y, int offsetx, int offsety) {
   int absx = offsetx + xpos;
   int absy = offsety + ypos;
 
   // check all children first, as they are above this widget
   for (auto &&child : children) {
     if (child != nullptr) {
-      if (child->TestHover(mouse_x, mouse_y, absx, absy)) {
+      if (child->TestHover(state, mouse_x, mouse_y, absx, absy)) {
         return false; // this wasn't hit
       }
     }
@@ -45,24 +45,24 @@ bool PanelWidget::TestHover(int mouse_x, int mouse_y, int offsetx, int offsety) 
   if (mouse_x >= absx && mouse_x <= absx + width) {
     if (mouse_y >= absy && mouse_y <= absy + height) {
       // no children were clicked, so click this
-      Hover();
+      Hover(state);
       return true;
     }
   }
   return false;
 }
 
-void PanelWidget::Hover() {
+void PanelWidget::Hover(avm::VMState *state) {
 }
 
-bool PanelWidget::TestClick(int mouse_x, int mouse_y, int offsetx, int offsety) {
+bool PanelWidget::TestClick(avm::VMState *state, int mouse_x, int mouse_y, int offsetx, int offsety) {
   int absx = offsetx + xpos;
   int absy = offsety + ypos;
 
   // check all children first, as they are above this widget
   for (auto &&child : children) {
     if (child != nullptr) {
-      if (child->TestClick(mouse_x, mouse_y, absx, absy)) {
+      if (child->TestClick(state, mouse_x, mouse_y, absx, absy)) {
         return false; // this wasn't hit
       }
     }
@@ -71,24 +71,24 @@ bool PanelWidget::TestClick(int mouse_x, int mouse_y, int offsetx, int offsety) 
   if (mouse_x >= absx && mouse_x <= absx + width) {
     if (mouse_y >= absy && mouse_y <= absy + height) {
       // no children were clicked, so click this
-      Click();
+      Click(state);
       return true;
     }
   }
   return false;
 }
 
-void PanelWidget::Click() {
+void PanelWidget::Click(avm::VMState *state) {
 }
 
-bool PanelWidget::TestUnclick(int mouse_x, int mouse_y, int offsetx, int offsety) {
+bool PanelWidget::TestUnclick(avm::VMState *state, int mouse_x, int mouse_y, int offsetx, int offsety) {
   int absx = offsetx + xpos;
   int absy = offsety + ypos;
 
   // check all children first, as they are above this widget
   for (auto &&child : children) {
     if (child != nullptr) {
-      if (child->TestUnclick(mouse_x, mouse_y, absx, absy)) {
+      if (child->TestUnclick(state, mouse_x, mouse_y, absx, absy)) {
         return false; // this wasn't hit
       }
     }
@@ -97,14 +97,14 @@ bool PanelWidget::TestUnclick(int mouse_x, int mouse_y, int offsetx, int offsety
   if (mouse_x >= absx && mouse_x <= absx + width) {
     if (mouse_y >= absy && mouse_y <= absy + height) {
       // no children were clicked, so click this
-      Unclick();
+      Unclick(state);
       return true;
     }
   }
   return false;
 }
 
-void PanelWidget::Unclick() {
+void PanelWidget::Unclick(avm::VMState *state) {
 }
 
 void PanelWidget::Draw(const Matrix4 &proj, Font *font, int offsetx, int offsety) {

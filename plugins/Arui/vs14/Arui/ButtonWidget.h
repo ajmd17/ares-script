@@ -29,18 +29,18 @@ public:
   std::tuple<float, float, float> GetTextColor() const;
   void SetTextColor(const std::tuple<float, float, float> &rgb);
 
-  virtual bool TestHover(int mouse_x, int mouse_y, int offsetx, int offsety);
-  virtual void Hover();
-  virtual bool TestClick(int mouse_x, int mouse_y, int offsetx, int offsety);
-  virtual void Click();
-  virtual bool TestUnclick(int mouse_x, int mouse_y, int offsetx, int offsety);
-  virtual void Unclick();
+  virtual bool TestHover(avm::VMState *state, int mouse_x, int mouse_y, int offsetx, int offsety);
+  virtual void Hover(avm::VMState *state);
+  virtual bool TestClick(avm::VMState *state, int mouse_x, int mouse_y, int offsetx, int offsety);
+  virtual void Click(avm::VMState *state);
+  virtual bool TestUnclick(avm::VMState *state, int mouse_x, int mouse_y, int offsetx, int offsety);
+  virtual void Unclick(avm::VMState *state);
   virtual void Draw(const Matrix4 &proj, Font *font, int offsetx, int offsety);
 
 private:
   double blendtime;
 
-  ButtonState state, prevstate;
+  ButtonState btnstate, prevstate;
 
   std::string text;
   std::tuple<float, float, float> textcolor;

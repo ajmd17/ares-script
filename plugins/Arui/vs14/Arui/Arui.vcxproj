@@ -156,6 +156,7 @@
     <ClInclude Include="Math\vector2.h" />
     <ClInclude Include="Math\vector3.h" />
     <ClInclude Include="Math\vector4.h" />
+    <ClInclude Include="MenuBarWidget.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="PanelWidget.h" />
     <ClInclude Include="Quad.h" />
