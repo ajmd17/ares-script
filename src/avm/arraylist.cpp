@@ -3,29 +3,34 @@
 #include <detail/vm_state.h>
 
 namespace avm {
-Array::Array() {
+Array::Array()
+{
 }
 
-void Array::invoke(VMState *, uint32_t) {
-  throw std::runtime_error("not a function");
+void Array::invoke(VMState *, uint32_t)
+{
+    throw std::runtime_error("not a function");
 }
 
-Reference Array::Clone(VMState *state) {
-  auto ref = Reference(*state->heap.AllocObject<Array>());
+Reference Array::Clone(VMState *state)
+{
+    auto ref = Reference(*state->heap.AllocObject<Array>());
 
-  // copy all members
-  for (auto &&member : fields) {
-    ref.Ref()->AddFieldReference(state, member.first, member.second.Ref()->Clone(state));
-  }
+    // copy all members
+    for (auto &&member : fields) {
+        ref.Ref()->AddFieldReference(state, member.first, member.second.Ref()->Clone(state));
+    }
 
-  return ref;
+    return ref;
 }
 
-std::string Array::ToString() const {
-  return TypeString();
+std::string Array::ToString() const
+{
+    return TypeString();
 }
 
-std::string Array::TypeString() const {
-  return "array";
+std::string Array::TypeString() const
+{
+    return "array";
 }
 } // namespace avm

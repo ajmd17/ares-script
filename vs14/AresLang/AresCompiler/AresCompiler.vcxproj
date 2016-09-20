@@ -141,10 +141,10 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\include\compiler\abytecodegen.h" />
-    <ClInclude Include="..\..\..\include\compiler\acompiler.h" />
-    <ClInclude Include="..\..\..\include\compiler\alexer.h" />
-    <ClInclude Include="..\..\..\include\compiler\aparser.h" />
+    <ClInclude Include="..\..\..\include\compiler\bytecode_generator.h" />
+    <ClInclude Include="..\..\..\include\compiler\compiler.h" />
+    <ClInclude Include="..\..\..\include\compiler\lexer.h" />
+    <ClInclude Include="..\..\..\include\compiler\parser.h" />
     <ClInclude Include="..\..\..\include\compiler\config.h" />
     <ClInclude Include="..\..\..\include\compiler\detail\ast.h" />
     <ClInclude Include="..\..\..\include\compiler\detail\ast_handler.h" />
@@ -159,18 +159,19 @@
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\src\compiler\abytecodegen.cpp" />
-    <ClCompile Include="..\..\..\src\compiler\acompiler.cpp" />
-    <ClCompile Include="..\..\..\src\compiler\alexer.cpp" />
-    <ClCompile Include="..\..\..\src\compiler\aparser.cpp" />
-    <ClCompile Include="..\..\..\src\compiler\ast\AstBinaryOp.cpp" />
-    <ClCompile Include="..\..\..\src\compiler\ast\AstExpression.cpp" />
-    <ClCompile Include="..\..\..\src\compiler\ast\AstFloat.cpp" />
-    <ClCompile Include="..\..\..\src\compiler\ast\AstInteger.cpp" />
-    <ClCompile Include="..\..\..\src\compiler\ast\AstNode.cpp" />
-    <ClCompile Include="..\..\..\src\compiler\ast\AstUnaryOp.cpp" />
+    <ClCompile Include="..\..\..\src\compiler\bytecode_generator.cpp" />
+    <ClCompile Include="..\..\..\src\compiler\compiler.cpp" />
+    <ClCompile Include="..\..\..\src\compiler\lexer.cpp" />
+    <ClCompile Include="..\..\..\src\compiler\parser.cpp" />
+    <ClCompile Include="..\..\..\src\compiler\ast\ast_binary_op.cpp" />
+    <ClCompile Include="..\..\..\src\compiler\ast\ast_expression.cpp" />
+    <ClCompile Include="..\..\..\src\compiler\ast\ast_float.cpp" />
+    <ClCompile Include="..\..\..\src\compiler\ast\ast_integer.cpp" />
+    <ClCompile Include="..\..\..\src\compiler\ast\ast_node.cpp" />
+    <ClCompile Include="..\..\..\src\compiler\ast\ast_unary_op.cpp" />
     <ClCompile Include="..\..\..\src\compiler\error.cpp" />
     <ClCompile Include="..\..\..\src\compiler\semantic.cpp" />
+    <ClCompile Include="..\..\..\src\compiler\state.cpp" />
     <ClCompile Include="..\..\..\src\compiler\token.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>

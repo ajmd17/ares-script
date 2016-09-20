@@ -9,55 +9,55 @@
 
 namespace avm {
 enum Keyword {
-  Keyword_invalid = -1,
-  Keyword_if,
-  Keyword_else,
-  Keyword_do,
-  Keyword_while,
-  Keyword_for,
-  Keyword_foreach,
-  Keyword_switch,
-  Keyword_case,
-  Keyword_break,
-  Keyword_continue,
-  Keyword_default,
-  Keyword_return,
-  Keyword_goto,
-  Keyword_try,
-  Keyword_catch,
-  Keyword_throw,
-  Keyword_class,
-  Keyword_enum,
-  Keyword_object,
-  Keyword_void,
-  Keyword_true,
-  Keyword_false,
-  Keyword_null,
-  Keyword_var,
-  Keyword_alias,
-  Keyword_using,
-  Keyword_attribute,
-  Keyword_static,
-  Keyword_public,
-  Keyword_private,
-  Keyword_protected,
-  Keyword_const,
-  Keyword_func,
-  Keyword_super,
-  Keyword_module,
-  Keyword_range,
-  Keyword_import,
-  Keyword_in,
-  Keyword_is,
-  Keyword_not,
-  Keyword_and,
-  Keyword_or,
-  Keyword_as,
-  Keyword_cast,
-  Keyword_print,
-  Keyword_self,
-  Keyword_new,
-  Keyword_delete
+    Keyword_invalid = -1,
+    Keyword_if,
+    Keyword_else,
+    Keyword_do,
+    Keyword_while,
+    Keyword_for,
+    Keyword_foreach,
+    Keyword_switch,
+    Keyword_case,
+    Keyword_break,
+    Keyword_continue,
+    Keyword_default,
+    Keyword_return,
+    Keyword_goto,
+    Keyword_try,
+    Keyword_catch,
+    Keyword_throw,
+    Keyword_class,
+    Keyword_enum,
+    Keyword_object,
+    Keyword_void,
+    Keyword_true,
+    Keyword_false,
+    Keyword_null,
+    Keyword_var,
+    Keyword_alias,
+    Keyword_using,
+    Keyword_attribute,
+    Keyword_static,
+    Keyword_public,
+    Keyword_private,
+    Keyword_protected,
+    Keyword_const,
+    Keyword_func,
+    Keyword_super,
+    Keyword_module,
+    Keyword_range,
+    Keyword_import,
+    Keyword_in,
+    Keyword_is,
+    Keyword_not,
+    Keyword_and,
+    Keyword_or,
+    Keyword_as,
+    Keyword_cast,
+    Keyword_print,
+    Keyword_self,
+    Keyword_new,
+    Keyword_delete
 };
 
 const std::map<std::string, Keyword> keywords = {
@@ -111,26 +111,29 @@ const std::map<std::string, Keyword> keywords = {
   { "delete", Keyword_delete }
 };
 
-static std::string Keyword_ToString(Keyword kw) {
-  auto it = std::find_if(keywords.begin(), keywords.end(),
-    [&kw](const std::pair<std::string, Keyword> &item) {
-    return item.second == kw;
-  });
+static std::string Keyword_ToString(Keyword kw)
+{
+    auto it = std::find_if(keywords.begin(), keywords.end(),
+        [&kw](const std::pair<std::string, Keyword> &item)
+    {
+        return item.second == kw;
+    });
 
-  if (it == keywords.end()) {
-    throw std::out_of_range("Keyword not found");
-  }
+    if (it == keywords.end()) {
+        throw std::out_of_range("Keyword not found");
+    }
 
-  return it->first;
+    return it->first;
 }
 
-static Keyword Keyword_FromString(const std::string &str) {
-  auto it = keywords.find(str);
-  if (it == keywords.end()) {
-    return Keyword::Keyword_invalid;
-  } else {
-    return it->second;
-  }
+static Keyword Keyword_FromString(const std::string &str)
+{
+    auto it = keywords.find(str);
+    if (it == keywords.end()) {
+        return Keyword::Keyword_invalid;
+    } else {
+        return it->second;
+    }
 }
 } // namespace avm
 

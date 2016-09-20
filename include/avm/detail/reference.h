@@ -7,20 +7,20 @@ namespace avm {
 class Object;
 class Reference {
 public:
-  Reference();
-  explicit Reference(Object * &ref);
-  Reference(const Reference &other);
+    Reference();
+    explicit Reference(Object * &ref);
+    Reference(const Reference &other);
 
-  // returns the actual pointer held inside.
-  Object **Ptr() const;
+    // returns the actual pointer held inside.
+    Object **Ptr() const;
 
-  Object *&Ref();
-  const Object *const &Ref() const;
+    Object *&Ref();
+    const Object *const &Ref() const;
 
-  void DeleteObject();
+    void DeleteObject();
 
 protected:
-  Object **ref;
+    Object **ref;
 };
 } // namespace avm
 

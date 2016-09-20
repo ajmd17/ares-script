@@ -5,8 +5,8 @@
 
 namespace avm {
 union StackValue {
-  AVMInteger_t int_value;
-  AVMFloat_t float_value;
+    AVMInteger_t int_value;
+    AVMFloat_t float_value;
 };
 } // namespace avm
 

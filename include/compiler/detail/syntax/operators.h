@@ -9,50 +9,50 @@
 
 namespace avm {
 enum BinaryOp {
-  BinOp_invalid = -1,
-  BinOp_power,
-  BinOp_multiply,
-  BinOp_divide,
-  BinOp_floor_divide,
-  BinOp_modulus,
-  BinOp_add,
-  BinOp_subtract,
+    BinOp_invalid = -1,
+    BinOp_power,
+    BinOp_multiply,
+    BinOp_divide,
+    BinOp_floor_divide,
+    BinOp_modulus,
+    BinOp_add,
+    BinOp_subtract,
 
-  BinOp_bitxor,
-  BinOp_bitand,
-  BinOp_bitor,
-  BinOp_bitand_assign,
-  BinOp_bitxor_assign,
-  BinOp_bitor_assign,
-  BinOp_bitshift_left,
-  BinOp_bitshift_right,
+    BinOp_bitxor,
+    BinOp_bitand,
+    BinOp_bitor,
+    BinOp_bitand_assign,
+    BinOp_bitxor_assign,
+    BinOp_bitor_assign,
+    BinOp_bitshift_left,
+    BinOp_bitshift_right,
 
-  BinOp_logand,
-  BinOp_logor,
+    BinOp_logand,
+    BinOp_logor,
 
-  BinOp_equals,
-  BinOp_not_equal,
-  BinOp_less,
-  BinOp_greater,
-  BinOp_less_eql,
-  BinOp_greater_eql,
+    BinOp_equals,
+    BinOp_not_equal,
+    BinOp_less,
+    BinOp_greater,
+    BinOp_less_eql,
+    BinOp_greater_eql,
 
-  BinOp_assign,
-  BinOp_add_assign,
-  BinOp_subtract_assign,
-  BinOp_multiply_assign,
-  BinOp_divide_assign,
-  BinOp_modulus_assign
+    BinOp_assign,
+    BinOp_add_assign,
+    BinOp_subtract_assign,
+    BinOp_multiply_assign,
+    BinOp_divide_assign,
+    BinOp_modulus_assign
 };
 
 enum UnaryOp {
-  UnOp_invalid = -1,
-  UnOp_lognot,
-  UnOp_negative,
-  UnOp_positive,
-  UnOp_bitcompl,
-  UnOp_increment,
-  UnOp_decrement,
+    UnOp_invalid = -1,
+    UnOp_lognot,
+    UnOp_negative,
+    UnOp_positive,
+    UnOp_bitcompl,
+    UnOp_increment,
+    UnOp_decrement,
 };
 
 static std::map<std::string, BinaryOp> binary_operators = {
@@ -118,55 +118,63 @@ static std::map<BinaryOp, int> precedence_map = {
   { BinOp_bitand_assign, 2 },{ BinOp_bitxor_assign, 2 },{ BinOp_bitor_assign, 2 }
 };
 
-static const std::string &BinaryOp_ToString(BinaryOp op) {
-  auto it = find_if(binary_operators.begin(), binary_operators.end(),
-    [&op](const std::pair<std::string, BinaryOp> &item) {
-    return item.second == op;
-  });
+static const std::string &BinaryOp_ToString(BinaryOp op)
+{
+    auto it = find_if(binary_operators.begin(), binary_operators.end(),
+        [&op](const std::pair<std::string, BinaryOp> &item)
+    {
+        return item.second == op;
+    });
 
-  if (it == binary_operators.end()) {
-    throw std::out_of_range("Binary operator not found");
-  }
-  return it->first;
+    if (it == binary_operators.end()) {
+        throw std::out_of_range("Binary operator not found");
+    }
+    return it->first;
 }
 
-static const std::string &UnaryOp_ToString(UnaryOp op) {
-  auto it = find_if(unary_operators.begin(), unary_operators.end(),
-    [&op](const std::pair<std::string, UnaryOp> &item) {
-    return item.second == op;
-  });
+static const std::string &UnaryOp_ToString(UnaryOp op)
+{
+    auto it = find_if(unary_operators.begin(), unary_operators.end(),
+        [&op](const std::pair<std::string, UnaryOp> &item)
+    {
+        return item.second == op;
+    });
 
-  if (it == unary_operators.end()) {
-    throw std::out_of_range("Unary operator not found");
-  }
-  return it->first;
+    if (it == unary_operators.end()) {
+        throw std::out_of_range("Unary operator not found");
+    }
+    return it->first;
 }
 
-static const BinaryOp BinaryOp_FromString(const std::string &str) {
-  auto it = binary_operators.find(str);
-  if (it == binary_operators.end()) {
-    return BinaryOp::BinOp_invalid;
-  } else {
-    return it->second;
-  }
+static const BinaryOp BinaryOp_FromString(const std::string &str)
+{
+    auto it = binary_operators.find(str);
+    if (it == binary_operators.end()) {
+        return BinaryOp::BinOp_invalid;
+    } else {
+        return it->second;
+    }
 }
 
-static const UnaryOp UnaryOp_FromString(const std::string &str) {
-  auto it = unary_operators.find(str);
-  if (it == unary_operators.end()) {
-    return UnaryOp::UnOp_invalid;
-  } else {
-    return it->second;
-  }
+static const UnaryOp UnaryOp_FromString(const std::string &str)
+{
+    auto it = unary_operators.find(str);
+    if (it == unary_operators.end()) {
+        return UnaryOp::UnOp_invalid;
+    } else {
+        return it->second;
+    }
 }
 
-static bool IsOperator(const std::string &str) {
-  return UnaryOp_FromString(str) != UnaryOp::UnOp_invalid ||
-    BinaryOp_FromString(str) != BinaryOp::BinOp_invalid;
+static bool IsOperator(const std::string &str)
+{
+    return UnaryOp_FromString(str) != UnaryOp::UnOp_invalid ||
+        BinaryOp_FromString(str) != BinaryOp::BinOp_invalid;
 }
 
-static int BinaryOp_Precedence(BinaryOp op) {
-  return precedence_map.at(op);
+static int BinaryOp_Precedence(BinaryOp op)
+{
+    return precedence_map.at(op);
 }
 } // namespace avm
 

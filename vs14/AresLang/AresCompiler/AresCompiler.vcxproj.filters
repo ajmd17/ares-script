@@ -54,36 +54,24 @@
     <ClInclude Include="..\..\..\include\compiler\detail\token.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\include\compiler\abytecodegen.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\include\compiler\acompiler.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\include\compiler\alexer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\include\compiler\aparser.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\include\compiler\config.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\compiler\bytecode_generator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\compiler\parser.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\compiler\lexer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\compiler\compiler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\compiler\abytecodegen.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\compiler\acompiler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\compiler\alexer.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\compiler\aparser.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\src\compiler\error.cpp">
@@ -95,23 +83,38 @@
     <ClCompile Include="..\..\..\src\compiler\token.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\compiler\ast\AstInteger.cpp">
+    <ClCompile Include="..\..\..\src\compiler\ast\ast_binary_op.cpp">
       <Filter>Source Files\Ast</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\compiler\ast\AstBinaryOp.cpp">
+    <ClCompile Include="..\..\..\src\compiler\ast\ast_expression.cpp">
       <Filter>Source Files\Ast</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\compiler\ast\AstExpression.cpp">
+    <ClCompile Include="..\..\..\src\compiler\ast\ast_float.cpp">
       <Filter>Source Files\Ast</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\compiler\ast\AstNode.cpp">
+    <ClCompile Include="..\..\..\src\compiler\ast\ast_integer.cpp">
       <Filter>Source Files\Ast</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\compiler\ast\AstFloat.cpp">
+    <ClCompile Include="..\..\..\src\compiler\ast\ast_node.cpp">
       <Filter>Source Files\Ast</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\compiler\ast\AstUnaryOp.cpp">
+    <ClCompile Include="..\..\..\src\compiler\ast\ast_unary_op.cpp">
       <Filter>Source Files\Ast</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\compiler\lexer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\compiler\compiler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\compiler\parser.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\compiler\bytecode_generator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\compiler\state.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

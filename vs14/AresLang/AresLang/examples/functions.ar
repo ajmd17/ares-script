@@ -1,0 +1,31 @@
+module Functions;
+using Console.println;
+
+/* Simple hello world example */
+func TestFunction1 {
+  println("Hello, world!");
+}
+TestFunction1();
+
+/* Alternative function syntax */
+var TestFunction2 = func {
+  println("Hello world from TestFunction2!");
+}
+TestFunction2();
+
+/* Function with parameters */
+func TestFunction3(name) {
+  println("Hello, " + name);
+}
+TestFunction3("Earth");
+
+/* Functions can return other functions */
+func TestFunction4 {
+  return func { println("A function within a function!"); }
+}
+var result = TestFunction4();
+result();
+
+/*  Pause the console */
+Console.system("pause");
+

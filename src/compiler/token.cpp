@@ -23,8 +23,4 @@ std::map<TokenType, std::string> Token::token_strings = {
   { Token_right_arrow, "->"},
   { Token_left_arrow, "<-"},
 };
-
-std::string Token::TokenTypeToString(TokenType type) {
-  return token_strings.at(type);
-}
 } // namespace avm

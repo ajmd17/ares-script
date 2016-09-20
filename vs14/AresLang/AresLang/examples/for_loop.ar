@@ -1,0 +1,10 @@
+module ForLoop
+
+Clock.start()
+
+for i: 0, 25 {
+  print i, '\n'
+}
+// back to old style comments! yay!!!
+print "Elapsed time: ", Clock.stop(), "ms\n"
+Console.readln()

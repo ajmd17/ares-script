@@ -6,7 +6,7 @@ g++ -shared -o bin/avm.dll -std=gnu++11 -O2 -w -Iinclude/ -Iinclude/avm/ src/avm
 
 rem Compile the ARES compiler
 echo Compiling ARES compiler...
-g++ -shared -o bin/alang.dll -std=gnu++11 -w -Iinclude/ -Iinclude/compiler/ src/compiler/abytecodegen.cpp src/compiler/acompiler.cpp src/compiler/alexer.cpp src/compiler/aparser.cpp src/compiler/error.cpp src/compiler/semantic.cpp src/compiler/token.cpp src/compiler/ast/AstBinaryOp.cpp src/compiler/ast/AstExpression.cpp src/compiler/ast/AstFloat.cpp src/compiler/ast/AstInteger.cpp src/compiler/ast/AstNode.cpp src/compiler/ast/AstUnaryOp.cpp
+g++ -shared -o bin/alang.dll -std=gnu++11 -w -Iinclude/ -Iinclude/compiler/ src/compiler/bytecode_generator.cpp src/compiler/compiler.cpp src/compiler/lexer.cpp src/compiler/parser.cpp src/compiler/error.cpp src/compiler/semantic.cpp src/compiler/token.cpp src/compiler/ast/ast_binary_op.cpp src/compiler/ast/ast_expression.cpp src/compiler/ast/ast_float.cpp src/compiler/ast/ast_integer.cpp src/compiler/ast/ast_node.cpp src/compiler/ast/ast_unary_op.cpp
 
 rem Compile the executable
 echo Compiling ARES executable...

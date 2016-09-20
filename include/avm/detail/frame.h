@@ -17,16 +17,16 @@ static const int AVM_LEVEL_GLOBAL = 0;
 
 class Frame {
 public:
-  Frame();
+    Frame();
 
-  bool GetLocal(const AVMString_t &name, Reference &out);
+    bool GetLocal(const AVMString_t &name, Reference &out);
 
-  // Local objects to this frame
-  std::vector<std::pair<AVMString_t, Reference>> locals;
-  // Last result from a conditional statement
-  bool last_cond;
-  // Has an exception occured
-  bool exception_occured;
+    // Local objects to this frame
+    std::vector<std::pair<AVMString_t, Reference>> locals;
+    // Last result from a conditional statement
+    bool last_cond;
+    // Has an exception occured
+    bool exception_occured;
 };
 } // namespace avm
 

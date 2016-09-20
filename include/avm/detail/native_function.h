@@ -12,39 +12,44 @@
 namespace avm {
 class NativeFunc : public Object {
 public:
-  typedef void(*FuncType) (VMState*, Object**, uint32_t);
+    typedef void(*FuncType) (VMState*, Object**, uint32_t);
 
-  NativeFunc(FuncType ptr)
-    : ptr(ptr) {
-  }
-
-  void invoke(VMState *state, uint32_t callargs) {
-    Object **args = new Object*[callargs];
-
-    for (int i = callargs - 1; i >= 0; i--) {
-      Reference ref = state->stack.back(); state->stack.pop_back();
-      args[i] = ref.Ref();
+    NativeFunc(FuncType ptr)
+        : ptr(ptr)
+    {
     }
 
-    ptr(state, args, callargs);
-    delete[] args;
-  }
+    void invoke(VMState *state, uint32_t callargs)
+    {
+        Object **args = new Object*[callargs];
 
-  Reference Clone(VMState *state) {
-    return Reference(*state->heap.AllocObject<NativeFunc>(ptr));
-  }
+        for (int i = callargs - 1; i >= 0; i--) {
+            Reference ref = state->stack.back(); state->stack.pop_back();
+            args[i] = ref.Ref();
+        }
 
-  std::string ToString() const {
-    return "<" + TypeString() + ">";
-  }
+        ptr(state, args, callargs);
+        delete[] args;
+    }
 
-  std::string TypeString() const {
-    std::string result("native function");
-    return result;
-  }
+    Reference Clone(VMState *state)
+    {
+        return Reference(*state->heap.AllocObject<NativeFunc>(ptr));
+    }
+
+    std::string ToString() const
+    {
+        return "<" + TypeString() + ">";
+    }
+
+    std::string TypeString() const
+    {
+        std::string result("native function");
+        return result;
+    }
 
 private:
-  FuncType ptr;
+    FuncType ptr;
 };
 
 /*class NativeFunc : public Object {

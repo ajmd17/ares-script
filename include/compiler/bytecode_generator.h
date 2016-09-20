@@ -1,5 +1,5 @@
-#ifndef ABYTECODEGEN_H
-#define ABYTECODEGEN_H
+#ifndef BYTECODE_GENERATOR_H
+#define BYTECODE_GENERATOR_H
 
 #include <vector>
 #include <memory>
@@ -12,11 +12,12 @@
 namespace avm {
 class BytecodeGenerator {
 public:
-  BytecodeGenerator(const InstructionStream &bstream);
-  bool Emit(std::ostream &stream);
+    BytecodeGenerator(const InstructionStream &bstream);
+
+    bool Emit(std::ostream &stream);
 
 private:
-  InstructionStream bstream;
+    InstructionStream bstream;
 };
 } // namespace avm
 

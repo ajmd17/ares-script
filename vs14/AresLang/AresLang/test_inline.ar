@@ -17,40 +17,40 @@ Arui.init();
 
 # add a button
 var button = Arui.button("My button", 25, 25, func() { 
-  println("click button");
+    println("click button");
 });
 
 Clock.start();
 for i: 0, 351 {
-  print i;
+    print i;
   
-  if i % 10 == 0:  print "\n";
-  else:            print "\t";
+    if i % 10 == 0:  print "\n";
+    else:            print "\t";
 }
 Console.println('Elapsed time = ', Clock.stop());
 
 func closureFunction {
-  println("Call closureFunction()");
-  return func(a, b, c) {
-    println("a = ", a, " b = ", b, " c = ", c);
-    return 7;
-  }
+    println("Call closureFunction()");
+    return func(a, b, c) {
+        println("a = ", a, " b = ", b, " c = ", c);
+        return 7;
+    }
 }
 
 print("Result = ", invoke(closureFunction(), 1, "test", 7), "\n");
 invoke (closureFunction);
 try {
-  invoke(closureFunction, 2);
+    invoke(closureFunction, 2);
 } catch {
-  # bad arguments
-  println("Error");
+    # bad arguments?
+    println("Error");
 }
 
 var window = object {
-  title: "my window",
-  show: func {
-    print "Show window\n";
-  }
+    title: "my window",
+    show: func {
+        print "Show window\n";
+    }
 }
 window.show();
 
@@ -70,59 +70,59 @@ print("x1 = ", x1, "\n");
 print ('-x1 = ', -x1, '\n');
 
 if 1 != 4 {
-  println("1 is not 4.");
+    println("1 is not 4.");
 } else if 1 == 1:
-  println("1 is 1.");
+    println("1 is 1.");
 
 func other() {
-  println("some other function here\n");
+    println("some other function here\n");
 }
 
 func main {
-  print "Counting 1-100...\n\n";
-  for i = 1, 101 {
-    print i
-    if i % 10 == 0:  print "\n";
-    else if i > 50:  print " ";
-    else:            print "\t";
-  }
-  print "\n\n";
+    print "Counting 1-100...\n\n";
+    for i = 1, 101 {
+        print i;
+        if i % 10 == 0:  print "\n";
+        else if i > 50:  print " ";
+        else:            print "\t";
+    }
+    print "\n\n";
   
-  var inner: func {
-    var vec1: object { x:5, y:1, z:2 }
-    var vec2: object { x:7, y:3, z:99 }
+    var inner: func {
+        var vec1: object { x:5, y:1, z:2 }
+        var vec2: object { x:7, y:3, z:99 }
 
-    func addvectors (vec1, vec2) {
-      return object {
-        x: vec1.x + vec2.x,
-        y: vec1.y + vec2.y,
-        z: vec1.z + vec2.z
-      }
+        func addvectors (vec1, vec2) {
+            return object {
+                x: vec1.x + vec2.x,
+                y: vec1.y + vec2.y,
+                z: vec1.z + vec2.z
+            }
+        }
+
+        print "vec1 = ", vec1, '\n';
+        print "vec2 = ", vec2, '\n';
+        print "vec1 + vec2 = ", addvectors(vec1, vec2), '\n\n\n';
+
+        var andrew: object { 
+            name: "andrew", 
+            dateOfBirth: 970215, 
+            email: "andrewmacdonald97@hotmail.com"
+        }
+        
+        var ethan: object {
+            name: "ethan",
+            dateOfBirth: 040401,
+            email: "ethanmacdonald04@gmail.com"
+        }
+        
+        print("andrew = ", andrew, "\n");
+        print("ethan = ", ethan, "\n");
+        print("typeof(andrew) = ", typeof(andrew), "\n");
     }
 
-    print "vec1 = ", vec1, '\n';
-    print "vec2 = ", vec2, '\n';
-    print "vec1 + vec2 = ", addvectors(vec1, vec2), '\n\n\n';
-
-    var andrew: object { 
-      name: "andrew", 
-      dateOfBirth: 970215, 
-      email: "andrewmacdonald97@hotmail.com"
-    }
-
-    var ethan: object {
-      name: "ethan",
-      dateOfBirth: 040401,
-      email: "ethanmacdonald04@gmail.com"
-    }
-
-    print("andrew = ", andrew, "\n");
-    print("ethan = ", ethan, "\n");
-    print("typeof(andrew) = ", typeof(andrew), "\n");
-  }
-  
-  other();
-  inner();
+    other();
+    inner();
 }
 
 main();

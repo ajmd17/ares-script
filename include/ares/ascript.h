@@ -7,13 +7,12 @@
 #include <fstream>
 
 namespace ares {
-
 /** Script Build Steps:
  *  Lexer
  *  - Analyzes text,
- *  - Returns a stream of tokens. 
+ *  - Returns a stream of tokens.
  *  - Errors can be emitted for invalid characters
- *  Parser 
+ *  Parser
  *  - Accepts those tokens
  *  - Attempts to form a logical layout of the program (AST)
  *  - Errors can be emitted for poorly formed syntax
@@ -36,15 +35,15 @@ namespace ares {
 */
 class Script {
 public:
-  Script(const std::string &code, const std::string &original_path, const std::string &output_file);
-  ~Script();
+    Script(const std::string &code, const std::string &original_path, const std::string &output_file);
+    ~Script();
 
-  bool Run();
+    bool Run();
 
 private:
-  std::string code;
-  std::string original_path;
-  std::string output_file;
+    std::string code;
+    std::string original_path;
+    std::string output_file;
 };
 }
 

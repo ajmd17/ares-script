@@ -6,8 +6,8 @@
 namespace ares {
 class WindowsLibLoader : public LibLoader {
 public:
-  void *LoadLib(const std::wstring &filepath);
-  void *LoadFunction(void *lib, const std::string &name);
+    void *LoadLib(const std::wstring &filepath);
+    void *LoadFunction(void *lib, const std::string &name);
 };
 } // namespace ares
 

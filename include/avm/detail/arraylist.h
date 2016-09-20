@@ -10,14 +10,14 @@ class VMState;
 
 class Array : public Object {
 public:
-  Array();
+    Array();
 
-  void invoke(VMState *, uint32_t);
+    void invoke(VMState *, uint32_t);
 
-  virtual Reference Clone(VMState *state);
+    virtual Reference Clone(VMState *state);
 
-  std::string ToString() const;
-  std::string TypeString() const;
+    std::string ToString() const;
+    std::string TypeString() const;
 };
 
 typedef std::shared_ptr<Array> arraylist_ptr;

@@ -8,82 +8,95 @@
 
 namespace avm {
 struct Exception {
-  std::string message;
+    std::string message;
 
-  Exception()
-    : message("exception") {
-  }
+    Exception()
+        : message("exception")
+    {
+    }
 
-  Exception(const std::string &message)
-    : message(message) {
-  }
+    Exception(const std::string &message)
+        : message(message)
+    {
+    }
 };
 
 struct BinOpException : public Exception {
-  BinOpException(const std::string &a, const std::string &b, const std::string &op)
-    : Exception("invalid operator '" + op + "' between types '" + a + "', '" + b + "'") {
-  }
+    BinOpException(const std::string &a, const std::string &b, const std::string &op)
+        : Exception("invalid operator '" + op + "' between types '" + a + "', '" + b + "'")
+    {
+    }
 };
 
 struct UnOpException : public Exception {
-  UnOpException(const std::string &type, const std::string &op)
-    : Exception("invalid operator '" + op + "' on type '" + type + "'") {
-  }
+    UnOpException(const std::string &type, const std::string &op)
+        : Exception("invalid operator '" + op + "' on type '" + type + "'")
+    {
+    }
 };
 
 struct ConstException : public Exception {
-  ConstException()
-    : Exception("object is const") {
-  }
+    ConstException()
+        : Exception("object is const")
+    {
+    }
 };
 
 struct NullRefException : public Exception {
-  NullRefException()
-    : Exception("object is null") {
-  }
+    NullRefException()
+        : Exception("object is null")
+    {
+    }
 };
 
 struct TypeException : public Exception {
-  TypeException(const std::string &type)
-    : Exception("invalid type: '" + type + "'") {
-  }
+    TypeException(const std::string &type)
+        : Exception("invalid type: '" + type + "'")
+    {
+    }
 };
 
 struct ConversionException : public Exception {
-  ConversionException(const std::string &type_from, const std::string &type_to)
-    : Exception("cannot convert from '" + type_from + "' to '" + type_to + "'") {
-  }
+    ConversionException(const std::string &type_from, const std::string &type_to)
+        : Exception("cannot convert from '" + type_from + "' to '" + type_to + "'")
+    {
+    }
 };
 
 struct InvalidArgsException : public Exception {
-  InvalidArgsException(int expected, int provided)
-    : Exception("invalid number of arguments, expected " +
-        util::to_string(expected) + ", got " + util::to_string(provided)) {
-  }
+    InvalidArgsException(int expected, int provided)
+        : Exception("invalid number of arguments, expected " +
+            util::to_string(expected) + ", got " + util::to_string(provided))
+    {
+    }
 };
 
 struct BadInvokeException : public Exception {
-  BadInvokeException(const std::string &typestr)
-    : Exception("cannot invoke object, not a function type. Type: '" + typestr + "'") {
-  }
+    BadInvokeException(const std::string &typestr)
+        : Exception("cannot invoke object, not a function type. Type: '" + typestr + "'")
+    {
+    }
 };
 
 struct MemberNotFoundException : public Exception {
-  MemberNotFoundException(const std::string &name)
-    : Exception("member '" + name + "' not found") {
-  }
+    MemberNotFoundException(const std::string &name)
+        : Exception("member '" + name + "' not found")
+    {
+    }
 };
 
 struct LibraryLoadException : public Exception {
-  LibraryLoadException(const std::string &path)
-    : Exception("library '" + path + "' could not be loaded") {
-  }
+    LibraryLoadException(const std::string &path)
+        : Exception("library '" + path + "' could not be loaded")
+    {
+    }
 };
 
 struct LibraryFunctionLoadException : public Exception {
-  LibraryFunctionLoadException(const std::string &name)
-    : Exception("library function '" + name + "' could not be loaded") {
-  }
+    LibraryFunctionLoadException(const std::string &name)
+        : Exception("library function '" + name + "' could not be loaded")
+    {
+    }
 };
 } // namespace avm
 
