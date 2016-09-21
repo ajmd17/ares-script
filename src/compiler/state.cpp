@@ -3,20 +3,20 @@
 namespace avm {
 CompilerState::CompilerState()
     : block_id_counter(0),
-    level(compiler_global_level),
-    function_level(0)
+      level(compiler_global_level),
+      function_level(0)
 {
     levels[level] = LevelInfo();
 }
 
 CompilerState::CompilerState(CompilerState &&other)
     : block_id_counter(other.block_id_counter),
-    level(other.level),
-    function_level(other.function_level),
-    levels(other.levels),
-    native_function_calls(other.native_function_calls),
-    use_counts(other.use_counts),
-    errors(other.errors)
+      level(other.level),
+      function_level(other.function_level),
+      levels(other.levels),
+      native_function_calls(other.native_function_calls),
+      use_counts(other.use_counts),
+      errors(other.errors)
 {
     typedef std::pair<std::string, std::unique_ptr<AstModule>> ModuleStringPair;
 

@@ -97,7 +97,7 @@ bool Script::Run()
             .Define("readln", 0);
 
         if (compiler.Compile(unit.get())) {
-            BytecodeGenerator gen(compiler.GetInstructions());
+            BytecodeGenerator gen(compiler.GetInstructions(), compiler.GetState().labels);
             ByteStream *stream = nullptr;
 
             std::ofstream file(output_file, std::ios::binary);
@@ -145,6 +145,8 @@ bool Script::Run()
 
             delete vm;
             delete stream;
+
+            std::system("pause");
 
             return true;
         } else {

@@ -57,13 +57,13 @@ enum ErrorType {
     Msg_expected_semicolon,
 
     /* Info */
-    Msg_missing_final_return,
+    //Msg_missing_final_return,
     Msg_unused_identifier,
     Msg_empty_function_body,
     Msg_empty_statement_body,
     Msg_module_name_begins_lowercase,
-    Msg_function_name_begins_uppercase,
-    Msg_variable_name_begins_uppercase,
+   // Msg_function_name_begins_uppercase,
+   // Msg_variable_name_begins_uppercase,
 };
 
 class BuildMessage {

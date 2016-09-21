@@ -11,9 +11,14 @@ VMInstance::VMInstance()
 
 VMInstance::~VMInstance()
 {
+    std::cout << "\n\nstack dump:\n\n";
+    for (auto &&it : state->stack) {
+        std::cout << it.Ref()->ToString() << "\n";
+    }
+
     GC();
-    //std::cout << "\n\nheap dump:\n\n";
-    //state->heap.DumpHeap();
+    std::cout << "\n\nheap dump:\n\n";
+    state->heap.DumpHeap();
     delete state;
 }
 
@@ -332,7 +337,6 @@ void VMInstance::HandleInstruction(OpCode_t opcode)
             }
 
             DebugLog("If result: %s", (result ? "true" : "false"));
-            PopStack();
 
             frame->last_cond = result;
 
@@ -347,7 +351,25 @@ void VMInstance::HandleInstruction(OpCode_t opcode)
     case OpCode_irl_if_false:
     {
         if (state->read_level == state->frame_level) {
-            if (!state->frames[state->frame_level]->last_cond) {
+            auto *frame = state->frames[state->frame_level];
+
+            Variable *top = dynamic_cast<Variable*>(state->stack.back().Ref());
+            if (!top) {
+                state->HandleException(NullRefException());
+            }
+
+            bool result = false;
+            try {
+                result = (top ? top->Cast<bool>() : false);
+            } catch (const std::exception &ex) {
+                state->HandleException(Exception(ex.what()));
+            }
+
+            DebugLog("If result: %s", (result ? "true" : "false"));
+
+            frame->last_cond = result;
+
+            if (!result) {
                 ++state->read_level;
                 DebugLog("Increase read level to: %d", state->read_level);
             }
@@ -425,7 +447,7 @@ void VMInstance::HandleInstruction(OpCode_t opcode)
     }
     case OpCode_jump_if_true:
     {
-        if (state->read_level == state->frame_level &&
+        /*if (state->read_level == state->frame_level &&
             state->frames[state->frame_level]->last_cond) {
             uint32_t id;
             state->stream->Read(&id);
@@ -436,13 +458,46 @@ void VMInstance::HandleInstruction(OpCode_t opcode)
             state->stream->Seek(position);
         } else {
             state->stream->Skip(sizeof(uint32_t));
+        }*/
+
+        if (state->read_level == state->frame_level) {
+            auto *frame = state->frames[state->frame_level];
+
+            Variable *top = dynamic_cast<Variable*>(state->stack.back().Ref());
+            if (!top) {
+                state->HandleException(NullRefException());
+            }
+
+            bool result = false;
+            try {
+                result = (top ? top->Cast<bool>() : false);
+            } catch (const std::exception &ex) {
+                state->HandleException(Exception(ex.what()));
+            }
+
+            DebugLog("If result: %s", (result ? "true" : "false"));
+
+            frame->last_cond = result;
+
+            if (result) {
+                uint32_t id;
+                state->stream->Read(&id);
+
+                auto position = state->block_positions[id];
+                DebugLog("Go to block: %u at position: %d", id, position);
+                state->stream->Seek(position);
+            } else {
+                state->stream->Skip(sizeof(uint32_t));
+            }
+        } else {
+            state->stream->Skip(sizeof(uint32_t));
         }
 
         break;
     }
     case OpCode_jump_if_false:
     {
-        if (state->read_level == state->frame_level &&
+        /*if (state->read_level == state->frame_level &&
             !state->frames[state->frame_level]->last_cond) {
             uint32_t id;
             state->stream->Read(&id);
@@ -451,6 +506,39 @@ void VMInstance::HandleInstruction(OpCode_t opcode)
             DebugLog("Go to block: %u at position: %d", id, position);
 
             state->stream->Seek(position);
+        } else {
+            state->stream->Skip(sizeof(uint32_t));
+        }*/
+
+        if (state->read_level == state->frame_level) {
+            auto *frame = state->frames[state->frame_level];
+
+            Variable *top = dynamic_cast<Variable*>(state->stack.back().Ref());
+            if (!top) {
+                state->HandleException(NullRefException());
+            }
+
+            bool result = false;
+            try {
+                result = (top ? top->Cast<bool>() : false);
+            } catch (const std::exception &ex) {
+                state->HandleException(Exception(ex.what()));
+            }
+
+            DebugLog("If result: %s", (result ? "true" : "false"));
+
+            frame->last_cond = result;
+
+            if (!result) {
+                uint32_t id;
+                state->stream->Read(&id);
+
+                auto position = state->block_positions[id];
+                DebugLog("Go to block: %u at position: %d", id, position);
+                state->stream->Seek(position);
+            } else {
+                state->stream->Skip(sizeof(uint32_t));
+            }
         } else {
             state->stream->Skip(sizeof(uint32_t));
         }

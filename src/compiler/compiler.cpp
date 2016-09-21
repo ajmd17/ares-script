@@ -83,8 +83,8 @@ bool Compiler::Compile(AstModule *node)
 
 void Compiler::Accept(AstModule *node)
 {
-    for (int i = 0; i < node->children.size(); i++) {
-        Accept(node->children[i].get());
+    for (auto &&child : node->children) {
+        Accept(child.get());
     }
 }
 
@@ -618,19 +618,44 @@ void Compiler::Accept(AstEnum *node)
 
 void Compiler::Accept(AstIfStmt *node)
 {
+    unsigned int after_if_id = ++state.block_id_counter;
+
     Accept(node->conditional.get());
-    bstream << Instruction<OpCode_t>(OpCode_irl_if_true);
+    // if result is false, then skip to where the else statement is
+    bstream << Instruction<OpCode_t, uint32_t>(OpCode_jump_if_false, after_if_id);
+
+    // temporary:
+    bstream << Instruction<OpCode_t>(OpCode_irl);
 
     IncreaseBlock(LevelType::Level_condition);
     Accept(node->block.get());
     DecreaseBlock();
 
+    Label skip_if_label;
+    skip_if_label.id = after_if_id;
+    skip_if_label.location = bstream.GetPosition();
+    state.labels.push_back(skip_if_label);
+
     if (node->else_statement) {
-        bstream << Instruction<OpCode_t>(OpCode_irl_if_false);
+        unsigned int after_else_id = ++state.block_id_counter;
+        // if the if result was true, skip to after the else statement
+        bstream << Instruction<OpCode_t, uint32_t>(OpCode_jump_if_true, after_else_id);
+
+        // temporary:
+        bstream << Instruction<OpCode_t>(OpCode_irl);
+
         IncreaseBlock(LevelType::Level_condition);
         Accept(node->else_statement.get());
         DecreaseBlock();
+
+        Label skip_else_label;
+        skip_else_label.id = after_else_id;
+        skip_else_label.location = bstream.GetPosition();
+        state.labels.push_back(skip_else_label);
     }
+
+    // finally, pop the conditional from the stack:
+    bstream << Instruction<OpCode_t>(OpCode_pop);
 }
 
 void Compiler::Accept(AstPrintStmt *node)
@@ -700,22 +725,49 @@ void Compiler::Accept(AstForLoop *node)
     }
 
     if ((config::optimize_remove_dead_code && !empty_body) || !config::optimize_remove_dead_code) {
-        auto id = ++state.block_id_counter;
+        auto top_loop_id = ++state.block_id_counter;
+        auto bottom_loop_id = ++state.block_id_counter;
 
+        // begin initializer block
         bstream << Instruction<OpCode_t>(OpCode_irl);
         IncreaseBlock(LevelType::Level_default);
+
         Accept(node->initializer.get());
-        bstream << Instruction<OpCode_t, uint32_t>(OpCode_store_address, id);
+
+       // label to go to top of loop
+        Label top_loop_label;
+        top_loop_label.id = top_loop_id;
+        top_loop_label.location = bstream.GetPosition();
+        state.labels.push_back(top_loop_label);
 
         Accept(node->conditional.get());
-        bstream << Instruction<OpCode_t>(OpCode_irl_if_true);
+        // skip the loop if the condition is false
+        bstream << Instruction<OpCode_t, uint32_t>(OpCode_jump_if_false, bottom_loop_id);
 
+        bstream << Instruction<OpCode_t>(OpCode_irl);
         IncreaseBlock(LevelType::Level_loop);
         Accept(node->block.get());
         DecreaseBlock();
         Accept(node->afterthought.get());
 
-        bstream << Instruction<OpCode_t, uint32_t>(OpCode_jump_if_true, id);
+        // pop the afterthought from the stack:
+        bstream << Instruction<OpCode_t>(OpCode_pop);
+
+        // pop the conditional from the stack:
+        bstream << Instruction<OpCode_t>(OpCode_pop);
+
+        // jump to top of loop
+        bstream << Instruction<OpCode_t, uint32_t>(OpCode_jump, top_loop_id);
+
+        Label bottom_loop_label;
+        bottom_loop_label.id = bottom_loop_id;
+        bottom_loop_label.location = bstream.GetPosition();
+        state.labels.push_back(bottom_loop_label);
+
+        // pop the final conditional value from the stack
+        bstream << Instruction<OpCode_t>(OpCode_pop);
+
+        // end of initializer block
         DecreaseBlock();
     }
 }
@@ -731,18 +783,40 @@ void Compiler::Accept(AstWhileLoop *node)
     }
 
     if ((config::optimize_remove_dead_code && !empty_body) || !config::optimize_remove_dead_code) {
-        auto id = ++state.block_id_counter;
+        auto top_loop_id = ++state.block_id_counter;
+        auto bottom_loop_id = ++state.block_id_counter;
 
-        bstream << Instruction<OpCode_t, uint32_t>(OpCode_store_address, id);
+        // label to go to top of loop
+        Label top_loop_label;
+        top_loop_label.id = top_loop_id;
+        top_loop_label.location = bstream.GetPosition();
+        state.labels.push_back(top_loop_label);
 
         Accept(node->conditional.get());
-        bstream << Instruction<OpCode_t>(OpCode_irl_if_true);
+
+        // skip the loop if the condition is false
+        bstream << Instruction<OpCode_t, uint32_t>(OpCode_jump_if_false, bottom_loop_id);
+
+        // temporary:
+        bstream << Instruction<OpCode_t>(OpCode_irl);
 
         IncreaseBlock(LevelType::Level_loop);
         Accept(node->block.get());
         DecreaseBlock();
 
-        bstream << Instruction<OpCode_t, uint32_t>(OpCode_jump_if_true, id);
+        // pop the conditional from the stack:
+        bstream << Instruction<OpCode_t>(OpCode_pop);
+
+        // jump to top of loop
+        bstream << Instruction<OpCode_t, uint32_t>(OpCode_jump, top_loop_id);
+
+        Label bottom_loop_label;
+        bottom_loop_label.id = bottom_loop_id;
+        bottom_loop_label.location = bstream.GetPosition();
+        state.labels.push_back(bottom_loop_label);
+
+        // pop the final conditional value from the stack
+        bstream << Instruction<OpCode_t>(OpCode_pop);
     }
 }
 

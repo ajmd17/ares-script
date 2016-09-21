@@ -7,17 +7,19 @@
 #include <fstream>
 #include <cstdint>
 
+#include <detail/state.h>
 #include <common/bytecodes.h>
 
 namespace avm {
 class BytecodeGenerator {
 public:
-    BytecodeGenerator(const InstructionStream &bstream);
+    BytecodeGenerator(const InstructionStream &bstream, const std::vector<Label> &labels);
 
     bool Emit(std::ostream &stream);
 
 private:
     InstructionStream bstream;
+    std::vector<Label> labels;
 };
 } // namespace avm
 

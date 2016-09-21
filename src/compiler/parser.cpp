@@ -382,10 +382,6 @@ std::unique_ptr<AstNode> Parser::ParseVariableDeclaration()
         Token *ident_token = ExpectRead(Token_identifier);
         std::string identifier = ident_token->value;
 
-        if (std::isupper(identifier[0])) {
-            InfoMsg(Msg_variable_name_begins_uppercase, ident_token->location, identifier);
-        }
-
         variable_names.push(identifier);
 
         std::unique_ptr<AstNode> assignment = nullptr;
@@ -936,9 +932,6 @@ std::unique_ptr<AstNode> Parser::ParseFunctionDefinition()
     }
 
     std::string identifier = ident_token->value;
-    if (std::isupper(identifier[0])) {
-        InfoMsg(Msg_function_name_begins_uppercase, ident_token->location, identifier);
-    }
 
     std::vector<std::string> arguments;
     bool variadic = false;

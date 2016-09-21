@@ -46,13 +46,13 @@ const std::map<ErrorType, std::string> BuildMessage::messages = {
     { Msg_expected_semicolon, "missing semicolon" },
 
     /* Info */
-    { Msg_missing_final_return, "'%' is missing a final return statement, assuming null" },
+    /*{ Msg_missing_final_return, "'%' is missing a final return statement, assuming null" },*/
     { Msg_unused_identifier, "'%' is not used" },
     { Msg_empty_function_body, "the function body of '%' is empty" },
     { Msg_empty_statement_body, "loop or statement body is empty" },
     { Msg_module_name_begins_lowercase, "module name '%' should begin with an uppercase character"},
-    { Msg_function_name_begins_uppercase, "function name '%' should begin with a lowercase character"},
-    { Msg_variable_name_begins_uppercase, "variable name '%' should begin with a lowercase character"},
+    /*{ Msg_function_name_begins_uppercase, "function name '%' should begin with a lowercase character"},
+    { Msg_variable_name_begins_uppercase, "variable name '%' should begin with a lowercase character"},*/
 };
 
 void BuildMessage::Display()

@@ -35,6 +35,11 @@ struct Symbol {
     size_t nargs = 0;
 };
 
+struct Label {
+    unsigned int id = 0;
+    unsigned int location = 0;
+};
+
 struct CompilerState {
     enum LevelType {
         Level_default,
@@ -71,8 +76,10 @@ struct CompilerState {
 
     std::map<std::string, std::unique_ptr<AstModule>> other_modules;
 
+    // the key is the label id
     std::map<int, LevelInfo> levels;
-    int level, function_level /* function nesting level */;
+    int level, function_level;
+    std::vector<Label> labels;
     unsigned int block_id_counter;
 
     CompilerState();
@@ -85,7 +92,7 @@ struct CompilerState {
     // Returns true if module is imported; module will be stored in 'out'
     bool FindModule(const std::string &name, AstNode *module, AstModule *&out);
 
-    inline LevelInfo &current_level() { return levels[level]; }
+    inline LevelInfo &CurrentLevel() { return levels[level]; }
 };
 
 struct ParserState {

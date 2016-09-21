@@ -65,7 +65,9 @@ public:
     const AstType type;
 
     AstNode(SourceLocation location, AstNode *module, AstType type)
-        : location(location), module(module), type(type)
+        : location(location), 
+          module(module), 
+          type(type)
     {
     }
 
@@ -105,7 +107,8 @@ struct AstModule : public AstNode {
     std::vector<std::unique_ptr<AstNode>> children;
 
     AstModule(SourceLocation location, const AVMString_t &name)
-        : name(name), AstNode(location, this, ast_type_module)
+        : name(name), 
+          AstNode(location, this, ast_type_module)
     {
     }
 
@@ -134,7 +137,8 @@ struct AstImports : public AstNode {
 
     AstImports(SourceLocation location, AstNode *module,
         std::vector<std::unique_ptr<AstNode>> children)
-        : children(std::move(children)), AstNode(location, module, ast_type_imports)
+        : children(std::move(children)), 
+          AstNode(location, module, ast_type_imports)
     {
     }
 };
@@ -148,9 +152,9 @@ struct AstImport : public AstNode {
         const AVMString_t &import_str, const AVMString_t &relative_path,
         bool is_module_import)
         : import_str(import_str),
-        relative_path(relative_path),
-        is_module_import(is_module_import),
-        AstNode(location, module, ast_type_import)
+          relative_path(relative_path),
+          is_module_import(is_module_import),
+          AstNode(location, module, ast_type_import)
     {
     }
 };
@@ -175,8 +179,9 @@ struct AstExpression : public AstNode {
 
     AstExpression(SourceLocation location, AstNode *module,
         std::unique_ptr<AstNode> child, bool should_clear_stack)
-        : child(move(child)), should_clear_stack(should_clear_stack),
-        AstNode(location, module, AstType::ast_type_expression)
+        : child(move(child)), 
+          should_clear_stack(should_clear_stack),
+          AstNode(location, module, AstType::ast_type_expression)
     {
     }
 
@@ -191,8 +196,10 @@ struct AstBinaryOp : public AstNode {
     AstBinaryOp(SourceLocation location, AstNode *module,
         std::unique_ptr<AstNode> left, std::unique_ptr<AstNode> right,
         BinaryOp op)
-        : left(move(left)), right(move(right)), op(op),
-        AstNode(location, module, ast_type_binop)
+        : left(move(left)), 
+          right(move(right)), 
+          op(op),
+          AstNode(location, module, ast_type_binop)
     {
     }
 
@@ -205,8 +212,9 @@ struct AstUnaryOp : public AstNode {
 
     AstUnaryOp(SourceLocation location, AstNode *module,
         std::unique_ptr<AstNode> child, UnaryOp op)
-        : child(move(child)), op(op),
-        AstNode(location, module, ast_type_unop)
+        : child(move(child)), 
+          op(op),
+          AstNode(location, module, ast_type_unop)
     {
     }
 
@@ -219,8 +227,9 @@ struct AstArrayAccess : public AstNode {
 
     AstArrayAccess(SourceLocation location, AstNode *module,
         std::unique_ptr<AstNode> object, std::unique_ptr<AstNode> index)
-        : object(std::move(object)), index(std::move(index)),
-        AstNode(location, module, ast_type_array_access)
+        : object(std::move(object)), 
+          index(std::move(index)),
+          AstNode(location, module, ast_type_array_access)
     {
     }
 };
@@ -233,8 +242,10 @@ struct AstMemberAccess : public AstNode {
     AstMemberAccess(SourceLocation location, AstNode *module,
         const AVMString_t &left_str,
         std::unique_ptr<AstNode> left, std::unique_ptr<AstNode> right)
-        : left_str(left_str), left(std::move(left)), right(std::move(right)),
-        AstNode(location, module, ast_type_member_access)
+        : left_str(left_str), 
+          left(std::move(left)), 
+          right(std::move(right)),
+          AstNode(location, module, ast_type_member_access)
     {
     }
 };
@@ -245,8 +256,9 @@ struct AstModuleAccess : public AstNode {
 
     AstModuleAccess(SourceLocation location, AstNode *module,
         const AVMString_t &module_name, std::unique_ptr<AstNode> right)
-        : module_name(module_name), right(std::move(right)),
-        AstNode(location, module, ast_type_module_access)
+        : module_name(module_name), 
+          right(std::move(right)),
+          AstNode(location, module, ast_type_module_access)
     {
     }
 };
@@ -258,8 +270,10 @@ struct AstVariableDeclaration : public AstNode {
 
     AstVariableDeclaration(SourceLocation location, AstNode *module,
         const AVMString_t &name, std::unique_ptr<AstNode> assignment, bool is_const)
-        : name(name), assignment(std::move(assignment)), is_const(is_const),
-        AstNode(location, module, ast_type_var_declaration)
+        : name(name), 
+          assignment(std::move(assignment)), 
+          is_const(is_const),
+          AstNode(location, module, ast_type_var_declaration)
     {
     }
 };
@@ -270,8 +284,9 @@ struct AstAlias : public AstNode {
 
     AstAlias(SourceLocation location, AstNode *module,
         const AVMString_t &name, std::unique_ptr<AstNode> alias_to)
-        : name(name), alias_to(std::move(alias_to)),
-        AstNode(location, module, ast_type_alias)
+        : name(name), 
+          alias_to(std::move(alias_to)),
+          AstNode(location, module, ast_type_alias)
     {
     }
 };
@@ -280,7 +295,8 @@ struct AstUseModule : public AstNode {
     AVMString_t name;
 
     AstUseModule(SourceLocation location, AstNode *module, const AVMString_t &name)
-        : name(name), AstNode(location, module, ast_type_use_module)
+        : name(name), 
+          AstNode(location, module, ast_type_use_module)
     {
     }
 };
@@ -299,7 +315,8 @@ struct AstVariable : public AstNode {
     /* ========================================== */
 
     AstVariable(SourceLocation location, AstNode *module, const AVMString_t &name)
-        : name(name), AstNode(location, module, ast_type_variable)
+        : name(name), 
+          AstNode(location, module, ast_type_variable)
     {
     }
 };
@@ -308,7 +325,8 @@ struct AstInteger : public AstNode {
     AVMInteger_t value;
 
     AstInteger(SourceLocation location, AstNode *module, AVMInteger_t value)
-        : value(value), AstNode(location, module, ast_type_integer)
+        : value(value), 
+          AstNode(location, module, ast_type_integer)
     {
     }
 
@@ -339,7 +357,8 @@ struct AstFloat : public AstNode {
     AVMFloat_t value;
 
     AstFloat(SourceLocation location, AstNode *module, AVMFloat_t value)
-        : value(value), AstNode(location, module, ast_type_float)
+        : value(value), 
+          AstNode(location, module, ast_type_float)
     {
     }
 
@@ -361,7 +380,8 @@ struct AstString : public AstNode {
     AVMString_t value;
 
     AstString(SourceLocation location, AstNode *module, const AVMString_t &value)
-        : value(value), AstNode(location, module, ast_type_string)
+        : value(value), 
+          AstNode(location, module, ast_type_string)
     {
     }
 };
@@ -401,8 +421,9 @@ struct AstNew : public AstNode {
     AstNew(SourceLocation location, AstNode *module,
         const AVMString_t &identifier, // the variable it will go into
         std::unique_ptr<AstNode> constructor)
-        : identifier(identifier), constructor(std::move(constructor)),
-        AstNode(location, module, ast_type_new)
+        : identifier(identifier), 
+          constructor(std::move(constructor)),
+          AstNode(location, module, ast_type_new)
     {
     }
 };
@@ -416,8 +437,11 @@ struct AstFunctionDefinition : public AstNode {
     AstFunctionDefinition(SourceLocation location, AstNode *module,
         const AVMString_t &name, std::vector<AVMString_t> arguments,
         std::unique_ptr<AstNode> block, bool is_native = false)
-        : name(name), arguments(arguments), block(std::move(block)), is_native(is_native),
-        AstNode(location, module, ast_type_function_definition)
+        : name(name), 
+          arguments(arguments), 
+          block(std::move(block)), 
+          is_native(is_native),
+          AstNode(location, module, ast_type_function_definition)
     {
     }
 };
@@ -428,8 +452,9 @@ struct AstFunctionExpression : public AstNode {
 
     AstFunctionExpression(SourceLocation location, AstNode *module,
         std::vector<AVMString_t> arguments, std::unique_ptr<AstNode> block)
-        : arguments(arguments), block(std::move(block)),
-        AstNode(location, module, ast_type_function_expression)
+        : arguments(arguments), 
+          block(std::move(block)),
+          AstNode(location, module, ast_type_function_expression)
     {
     }
 };
@@ -446,8 +471,9 @@ struct AstFunctionCall : public AstNode {
 
     AstFunctionCall(SourceLocation location, AstNode *module,
         const AVMString_t &name, std::vector<std::unique_ptr<AstNode>> arguments)
-        : name(name), arguments(std::move(arguments)),
-        AstNode(location, module, ast_type_function_call)
+        : name(name), 
+          arguments(std::move(arguments)),
+          AstNode(location, module, ast_type_function_call)
     {
     }
 
@@ -463,8 +489,9 @@ struct AstClass : public AstNode {
 
     AstClass(SourceLocation location, AstNode *module,
         const AVMString_t &name, std::vector<std::unique_ptr<AstNode>> members)
-        : name(name), members(std::move(members)),
-        AstNode(location, module, ast_type_class_declaration)
+        : name(name), 
+          members(std::move(members)),
+          AstNode(location, module, ast_type_class_declaration)
     {
     }
 };
@@ -475,7 +502,7 @@ struct AstObjectExpression : public AstNode {
     AstObjectExpression(SourceLocation location, AstNode *module,
         std::vector<std::pair<std::string, std::unique_ptr<AstNode>>> members)
         : members(std::move(members)),
-        AstNode(location, module, ast_type_object_expression)
+          AstNode(location, module, ast_type_object_expression)
     {
     }
 };
@@ -487,7 +514,7 @@ struct AstEnum : public AstNode {
     AstEnum(SourceLocation location, AstNode *module, const AVMString_t &name,
         std::vector<std::pair<AVMString_t, std::unique_ptr<AstInteger>>> members)
         : name(name), members(std::move(members)),
-        AstNode(location, module, ast_type_enum)
+          AstNode(location, module, ast_type_enum)
     {
     }
 };
@@ -499,8 +526,8 @@ struct AstIfStmt : public AstNode {
         std::unique_ptr<AstNode> conditional, std::unique_ptr<AstNode> block,
         std::unique_ptr<AstNode> else_statement)
         : conditional(std::move(conditional)), block(std::move(block)),
-        else_statement(std::move(else_statement)),
-        AstNode(location, module, ast_type_if_statement)
+          else_statement(std::move(else_statement)),
+          AstNode(location, module, ast_type_if_statement)
     {
     }
 };
@@ -510,7 +537,7 @@ struct AstPrintStmt : public AstNode {
 
     AstPrintStmt(SourceLocation location, AstNode *module)
         : arguments(std::move(arguments)),
-        AstNode(location, module, ast_type_print)
+          AstNode(location, module, ast_type_print)
     {
     }
 
@@ -526,7 +553,7 @@ struct AstReturnStmt : public AstNode {
     AstReturnStmt(SourceLocation location, AstNode *module,
         std::unique_ptr<AstNode> value)
         : value(std::move(value)),
-        AstNode(location, module, AstType::ast_type_return)
+          AstNode(location, module, AstType::ast_type_return)
     {
     }
 };
@@ -543,10 +570,10 @@ struct AstForLoop : public AstNode {
         std::unique_ptr<AstNode> afterthought,
         std::unique_ptr<AstNode> block)
         : initializer(std::move(initializer)),
-        conditional(std::move(conditional)),
-        afterthought(std::move(afterthought)),
-        block(std::move(block)),
-        AstNode(location, module, ast_type_for_loop)
+          conditional(std::move(conditional)),
+          afterthought(std::move(afterthought)),
+          block(std::move(block)),
+          AstNode(location, module, ast_type_for_loop)
     {
     }
 };
@@ -558,7 +585,7 @@ struct AstWhileLoop : public AstNode {
     AstWhileLoop(SourceLocation location, AstNode *module,
         std::unique_ptr<AstNode> conditional, std::unique_ptr<AstNode> block)
         : conditional(std::move(conditional)), block(std::move(block)),
-        AstNode(location, module, ast_type_while_loop)
+          AstNode(location, module, ast_type_while_loop)
     {
     }
 };
@@ -573,9 +600,9 @@ struct AstTryCatch : public AstNode {
         std::unique_ptr<AstNode> catch_block,
         std::unique_ptr<AstNode> exception_object)
         : try_block(std::move(try_block)),
-        catch_block(std::move(catch_block)),
-        exception_object(std::move(exception_object)),
-        AstNode(location, module, ast_type_try_catch)
+          catch_block(std::move(catch_block)),
+          exception_object(std::move(exception_object)),
+          AstNode(location, module, ast_type_try_catch)
     {
     }
 };
@@ -584,7 +611,9 @@ struct AstRange : public AstNode {
     AVMInteger_t first, second;
 
     AstRange(SourceLocation location, AstNode *module, AVMInteger_t first, AVMInteger_t second)
-        : first(first), second(second), AstNode(location, module, ast_type_range)
+        : first(first), 
+          second(second), 
+          AstNode(location, module, ast_type_range)
     {
     }
 };

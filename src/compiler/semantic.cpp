@@ -19,7 +19,7 @@ void SemanticAnalyzer::Analyze(AstModule *ast)
 {
     Accept(ast);
 
-    LevelInfo &level = state_ptr->current_level();
+    LevelInfo &level = state_ptr->CurrentLevel();
     for (auto &&v : level.locals) {
         if (v.second.node != nullptr) {
             auto use_count = state_ptr->use_counts[v.second.node];
@@ -44,7 +44,7 @@ void SemanticAnalyzer::AddModule(const ModuleDefine &def)
         for (auto &&meth : def.methods) {
             std::string var_name = state_ptr->MakeVariableName(meth.name, unit.get());
 
-            for (auto &&var : state_ptr->current_level().locals) {
+            for (auto &&var : state_ptr->CurrentLevel().locals) {
                 if (var.first == meth.name) {
                     ErrorMsg(Msg_redeclared_identifier, SourceLocation(-1, -1, ""));
                     return;
@@ -55,7 +55,7 @@ void SemanticAnalyzer::AddModule(const ModuleDefine &def)
             info.original_name = meth.name;
             info.nargs = meth.nargs;
             info.is_native = true;
-            state_ptr->current_level().locals.push_back({ var_name, info });
+            state_ptr->CurrentLevel().locals.push_back({ var_name, info });
         }
 
         state_ptr->other_modules[def.name] = std::move(unit);
@@ -434,7 +434,7 @@ void SemanticAnalyzer::Accept(AstVariableDeclaration *node)
             break;
         }
 
-        state_ptr->current_level().locals.push_back({ var_name, info });
+        state_ptr->CurrentLevel().locals.push_back({ var_name, info });
 
         Accept(node->assignment.get());
     }
@@ -454,7 +454,7 @@ void SemanticAnalyzer::Accept(AstAlias *node)
         info.node = node->alias_to.get();
         info.original_name = node->name;
         info.is_alias = true;
-        state_ptr->current_level().locals.push_back({ var_name, info });
+        state_ptr->CurrentLevel().locals.push_back({ var_name, info });
     }
 }
 
@@ -562,7 +562,7 @@ void SemanticAnalyzer::Accept(AstFunctionDefinition *node)
             Symbol info;
             info.node = node;
             info.original_name = node->name;
-            state_ptr->current_level().locals.push_back({ var_name, info });
+            state_ptr->CurrentLevel().locals.push_back({ var_name, info });
         }
 
         AstBlock *body = dynamic_cast<AstBlock*>(node->block.get());
@@ -571,7 +571,7 @@ void SemanticAnalyzer::Accept(AstFunctionDefinition *node)
                 SourceLocation location = body->location;
 
                 InfoMsg(Msg_empty_function_body, location, node->name);
-                InfoMsg(Msg_missing_final_return, node->location, node->name);
+                //InfoMsg(Msg_missing_final_return, node->location, node->name);
 
                 // add return statement
                 auto ret_value = std::unique_ptr<AstNull>(new AstNull(location, node->module));
@@ -603,7 +603,7 @@ void SemanticAnalyzer::Accept(AstFunctionDefinition *node)
                 if (!has_return) {
                     SourceLocation location = body->children.back() ? body->children.back()->location : body->location;
                     // show warning
-                    InfoMsg(Msg_missing_final_return, node->location, node->name);
+                    //InfoMsg(Msg_missing_final_return, node->location, node->name);
 
                     // add return statement
                     auto ret_value = std::unique_ptr<AstNull>(new AstNull(location, node->module));
@@ -621,7 +621,7 @@ void SemanticAnalyzer::Accept(AstFunctionDefinition *node)
                 info.node = nullptr;
                 info.original_name = param;
                 std::string var_name = state_ptr->MakeVariableName(param, node->module);
-                state_ptr->current_level().locals.push_back({ var_name, info });
+                state_ptr->CurrentLevel().locals.push_back({ var_name, info });
             }
 
             Accept(body);
@@ -634,7 +634,7 @@ void SemanticAnalyzer::Accept(AstFunctionDefinition *node)
                 info.node = node;
                 info.original_name = node->name;
                 info.is_const = true;
-                state_ptr->current_level().locals.push_back({ var_name, info });
+                state_ptr->CurrentLevel().locals.push_back({ var_name, info });
             }
         }
     }
@@ -649,7 +649,7 @@ void SemanticAnalyzer::Accept(AstFunctionExpression *node)
             SourceLocation loc = body->location;
 
             InfoMsg(Msg_empty_function_body, loc, name);
-            InfoMsg(Msg_missing_final_return, node->location, name);
+            //InfoMsg(Msg_missing_final_return, node->location, name);
 
             // add return statement
             auto ret_value = std::unique_ptr<AstNull>(new AstNull(loc, node->module));
@@ -679,7 +679,7 @@ void SemanticAnalyzer::Accept(AstFunctionExpression *node)
             if (!has_return) {
                 SourceLocation location = body->children.back() ? body->children.back()->location : body->location;
 
-                InfoMsg(Msg_missing_final_return, node->location, name);
+                //InfoMsg(Msg_missing_final_return, node->location, name);
 
                 // add return statement
                 auto ret_value = std::unique_ptr<AstNull>(new AstNull(location, node->module));
@@ -697,7 +697,7 @@ void SemanticAnalyzer::Accept(AstFunctionExpression *node)
             info.node = node;
             info.original_name = param;
             std::string var_name = state_ptr->MakeVariableName(param, node->module);
-            state_ptr->current_level().locals.push_back({ var_name, info });
+            state_ptr->CurrentLevel().locals.push_back({ var_name, info });
         }
 
         Accept(body);
@@ -742,6 +742,7 @@ void SemanticAnalyzer::Accept(AstObjectExpression *node)
 void SemanticAnalyzer::Accept(AstEnum *node)
 {
     // currently, the enum identifier is not created, only the members of it
+
     /*std::string var_name = state_ptr->MakeVariableName(node->name, node->module);
     if (FindVariable(var_name, true)) {
       ErrorMsg(msg_redeclared_identifier, node->location, node->name);
@@ -765,7 +766,7 @@ void SemanticAnalyzer::Accept(AstEnum *node)
             info.original_name = it.first;
             info.is_alias = true;
             info.is_const = true;
-            state_ptr->current_level().locals.push_back({ var_name, info });
+            state_ptr->CurrentLevel().locals.push_back({ var_name, info });
         }
     }
 }
@@ -926,7 +927,7 @@ void SemanticAnalyzer::IncreaseBlock(LevelType type)
 
 void SemanticAnalyzer::DecreaseBlock()
 {
-    LevelInfo &level = state_ptr->current_level();
+    LevelInfo &level = state_ptr->CurrentLevel();
     for (auto &&v : level.locals) {
         if (v.second.node != nullptr) {
             auto usecount = state_ptr->use_counts[v.second.node];

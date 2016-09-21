@@ -7,17 +7,37 @@
 #include <utility>
 
 namespace avm {
-BytecodeGenerator::BytecodeGenerator(const InstructionStream &bstream) : bstream(bstream)
+BytecodeGenerator::BytecodeGenerator(const InstructionStream &bstream, const std::vector<Label> &labels)
+    : bstream(bstream),
+      labels(labels)
 {
 }
 
 bool BytecodeGenerator::Emit(std::ostream &filestream)
 {
     // write signature
-    filestream.write(ARES_MAGIC, strlen(ARES_MAGIC));
+    filestream.write(ARES_MAGIC, ARES_MAGIC_LEN);
     filestream.write(ARES_VERSION, ARES_VERSION_LEN);
 
-    for (auto &&ins : bstream.instructions) {
+    uint64_t label_offset = (uint64_t)filestream.tellp();
+    for (Label &label : labels) {
+        label_offset += sizeof(OpCode_t); // cmd type
+        label_offset += sizeof(uint32_t); // blockid
+        label_offset += sizeof(uint64_t); // block pos
+    }
+
+    for (Label &label : labels) {
+        // store addresses of each label at top of file
+        OpCodes opcode = OpCode_store_address;
+        uint32_t id = (uint32_t)label.id;
+        uint64_t addr = (uint64_t)label.location + label_offset;
+
+        filestream.write((char*)&opcode, sizeof(OpCode_t));
+        filestream.write((char*)&id, sizeof(uint32_t));
+        filestream.write((char*)&addr, sizeof(uint64_t));
+    }
+
+    for (Instruction<> &ins : bstream.instructions) {
         switch (ins.data.back()[0]) {
             // FALLTHROUGH
         case OpCode_ifl:

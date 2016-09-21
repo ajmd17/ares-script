@@ -2,6 +2,7 @@
 #define INSTRUCTIONS_H
 
 #define ARES_MAGIC "AR"
+#define ARES_MAGIC_LEN 2
 #define ARES_VERSION "13" // 1.3
 #define ARES_VERSION_LEN 2
 

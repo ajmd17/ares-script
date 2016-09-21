@@ -97,10 +97,20 @@ struct Instruction<T, Ts...> : Instruction<Ts...> {
 struct InstructionStream {
   std::vector<Instruction<>> instructions;
 
+  inline size_t GetPosition() const { return position; }
+
   InstructionStream &operator<<(Instruction<> command) {
     instructions.push_back(command);
+    for (auto &op : command.data) {
+        for (char byte : op) {
+            position++;
+        }
+    }
     return *this;
   }
+
+private:
+    size_t position = 0;
 };
 } // namespace avm
 
