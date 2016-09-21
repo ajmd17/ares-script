@@ -1,0 +1,57 @@
+module Functions;
+using Console.println;
+
+var counter = 0;
+while counter < 17 {
+  println(counter);
+  counter += 1;
+}
+print("after\n");
+
+if false {
+  print "wut\n";
+} else if true {
+  print "Yes!\n";
+} else {
+  print "wut\n";
+}
+
+for (var x = 0; x < 5; x+=1) {
+  print("x = ", x, "\t");
+}
+print('\n\n');
+
+
+/*if false {
+  print("yay!\n");
+  print ("pt2\n");
+}
+print("after\n");*/
+
+/* Simple hello world example */
+func TestFunction1 {
+  println("Hello, world!");
+}
+TestFunction1();
+
+/* Alternative function syntax */
+var TestFunction2 = func {
+  println("Hello world from TestFunction2!");
+}
+TestFunction2();
+
+/* Function with parameters */
+func TestFunction3(name) {
+  println("Hello, " + name);
+}
+TestFunction3("Earth");
+
+/* Functions can return other functions */
+func TestFunction4 {
+  return func { println("A function within a function!"); }
+}
+var result = TestFunction4();
+result();
+
+/*  Pause the console */
+Console.system("pause");
