@@ -4,12 +4,14 @@ Clock.start();
 for i: 0, 351 {
   print i;
   
-  if i % 10 == 0:  print "\n";
-  else:            print "\t";
+  if i % 10 == 0:  
+  	print "\n";
+  else:       
+  	print "\t";
 }
 print 'Elapsed time = ', Clock.stop(), '\n';
 
-/*using Reflection.typeof;
+using Reflection.typeof;
 using Console.println;
 
 alias int = Convert.toInt;
@@ -34,15 +36,6 @@ func other () {
 }
 
 func main {
-  print "Counting 1-100...\n\n";
-  for i = 1, 101 {
-    print i
-    if i % 10 == 0:  print "\n";
-    else if i > 50:  print " ";
-    else:            print "\t";
-  }
-  print "\n\n";
-  
   var inner: func {
     var vec1: object { x:5, y:1, z:2 }
     var vec2: object { x:7, y:3, z:99 }
@@ -81,14 +74,3 @@ func main {
 }
 
 main();
-
-# hex numbers
-# print ("0xDEADBEEF = ", 0xDEADBEEF, "\n");
-
-/*for ( var i = 0; i < 10; i += 3 ) {
-  print 'i = ', i, '\n';
-}
-
-print 'int(4.3) = ', int(4.3), '\n';
-print '\"True\" to bool = ', bool("True"), '\n';
-print 'typeof(counter) = ', typeof(counter), '\n';*/

@@ -2,6 +2,7 @@
 #define AST_HANDLER_H
 
 #include <memory>
+#include <cmath>
 
 #include <detail/ast.h>
 
@@ -203,7 +204,7 @@ private:
 
         switch (op) {
         case BinOp_power:
-            return std::move(std::unique_ptr<ReturnTypeAst>(new ReturnTypeAst(a->location, a->module, pow(static_cast<ReturnValueType>(left->value), static_cast<ReturnValueType>(right->value)))));
+            return std::move(std::unique_ptr<ReturnTypeAst>(new ReturnTypeAst(a->location, a->module, std::pow(static_cast<ReturnValueType>(left->value), static_cast<ReturnValueType>(right->value)))));
         case BinOp_multiply:
             return std::move(std::unique_ptr<ReturnTypeAst>(new ReturnTypeAst(a->location, a->module, static_cast<ReturnValueType>(left->value) * static_cast<ReturnValueType>(right->value))));
         case BinOp_floor_divide:

@@ -4,6 +4,7 @@
 #include <detail/vm_state.h>
 #include <detail/exception.h>
 #include <common/util/to_string.h>
+#include <cmath>
 
 namespace avm {
 Variable::Variable()

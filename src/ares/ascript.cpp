@@ -33,7 +33,7 @@ Script::~Script()
 {
 }
 
-void Tic(VMState *state, Object **args, size_t argc)
+void Tic(VMState *state, Object **args, uint32_t argc)
 {
     if (CheckArgs(state, 0, argc)) {
         global_timer.start();
@@ -44,7 +44,7 @@ void Tic(VMState *state, Object **args, size_t argc)
     }
 }
 
-void Toc(VMState *state, Object **args, size_t argc)
+void Toc(VMState *state, Object **args, uint32_t argc)
 {
     if (CheckArgs(state, 0, argc)) {
         auto ref = Reference(*state->heap.AllocNull());
