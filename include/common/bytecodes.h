@@ -5,6 +5,7 @@
 #include <memory>
 #include <string>
 #include <cstring>
+#include <ostream>
 
 #include <common/instructions.h>
 

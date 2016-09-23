@@ -20,11 +20,12 @@ void SemanticAnalyzer::Analyze(AstModule *ast)
     Accept(ast);
 
     LevelInfo &level = state_ptr->CurrentLevel();
-    for (auto &&v : level.locals) {
-        if (v.second.node != nullptr) {
-            auto use_count = state_ptr->use_counts[v.second.node];
+    for (auto &&local : level.locals) {
+        if (local.second.node != nullptr) {
+            size_t use_count = state_ptr->use_counts[local.second.node];
             if (use_count == 0) {
-                WarningMessage(Msg_unused_identifier, v.second.node->location, v.second.original_name);
+                WarningMessage(Msg_unused_identifier, 
+                    local.second.node->location, local.second.original_name);
             }
         }
     }
@@ -51,11 +52,12 @@ void SemanticAnalyzer::AddModule(const ModuleDefine &def)
                 }
             }
 
-            Symbol info;
-            info.original_name = meth.name;
-            info.nargs = meth.nargs;
-            info.is_native = true;
-            state_ptr->CurrentLevel().locals.push_back({ var_name, info });
+            auto &level = state_ptr->CurrentLevel();
+            Symbol symbol;
+            symbol.original_name = meth.name;
+            symbol.nargs = meth.nargs;
+            symbol.is_native = true;
+            level.locals.push_back({ var_name, symbol });
         }
 
         state_ptr->other_modules[def.name] = std::move(unit);
@@ -287,7 +289,6 @@ void SemanticAnalyzer::Accept(AstBinaryOp *node)
     Accept(right.get());
 
     switch (node->op) {
-        // FALLTHROUGH
     case BinOp_assign:
         // assignment, change the set type
         if (left->type == ast_type_variable) {
@@ -322,6 +323,7 @@ void SemanticAnalyzer::Accept(AstBinaryOp *node)
                 }
             }
         }
+    // FALLTHROUGH
     case BinOp_add_assign:
     case BinOp_subtract_assign:
     case BinOp_multiply_assign:
@@ -402,16 +404,18 @@ void SemanticAnalyzer::Accept(AstVariableDeclaration *node)
     } else if (state_ptr->FindModule(node->name, node->module)) {
         ErrorMsg(Msg_identifier_is_module, node->location, node->name);
     } else {
-        Symbol info;
-        info.node = node;
-        info.original_name = node->name;
-        info.is_const = node->is_const;
-        info.current_value = node->assignment.get();
+        auto &level = state_ptr->CurrentLevel();
 
-        auto *right_side = info.current_value;
-        if (info.current_value->type == ast_type_expression) {
+        Symbol symbol;
+        symbol.node = node;
+        symbol.original_name = node->name;
+        symbol.is_const = node->is_const;
+        symbol.current_value = node->assignment.get();
+
+        AstNode *right_side = symbol.current_value;
+        if (right_side->type == ast_type_expression) {
             // get inner child
-            auto *expr_ast = static_cast<AstExpression*>(info.current_value);
+            AstExpression *expr_ast = static_cast<AstExpression*>(symbol.current_value);
             right_side = expr_ast->child.get();
         }
 
@@ -427,14 +431,14 @@ void SemanticAnalyzer::Accept(AstVariableDeclaration *node)
         case ast_type_integer:
         case ast_type_float:
         case ast_type_string:
-            info.is_literal = true;
+            symbol.is_literal = true;
             break;
         default:
-            info.is_literal = false;
+            symbol.is_literal = false;
             break;
         }
 
-        state_ptr->CurrentLevel().locals.push_back({ var_name, info });
+        level.locals.push_back({ var_name, symbol });
 
         Accept(node->assignment.get());
     }
@@ -450,11 +454,11 @@ void SemanticAnalyzer::Accept(AstAlias *node)
     } else {
         Accept(node->alias_to.get());
 
-        Symbol info;
-        info.node = node->alias_to.get();
-        info.original_name = node->name;
-        info.is_alias = true;
-        state_ptr->CurrentLevel().locals.push_back({ var_name, info });
+        Symbol symbol;
+        symbol.node = node->alias_to.get();
+        symbol.original_name = node->name;
+        symbol.is_alias = true;
+        state_ptr->CurrentLevel().locals.push_back({ var_name, symbol });
     }
 }
 
@@ -487,30 +491,34 @@ void SemanticAnalyzer::Accept(AstUseModule *node)
 
 void SemanticAnalyzer::Accept(AstVariable *node)
 {
-    Symbol *ptr = nullptr;
     std::string var_name = state_ptr->MakeVariableName(node->name, node->module);
-    if (FindVariable(var_name, false, ptr)) {
+    SymbolQueryResult query = FindVariable(var_name, false);
+    if (query) {
         // Copy symbol information
-        node->is_alias = ptr->is_alias;
-        if (ptr->is_alias) {
-            node->alias_to = ptr->node;
+        node->is_alias = query.symbol->is_alias;
+        if (query.symbol->is_alias) {
+            node->alias_to = query.symbol->node;
         }
-        node->is_const = ptr->is_const;
-        node->is_literal = ptr->is_literal;
-        node->current_value = ptr->current_value;
-        node->symbol_ptr = ptr;
+        node->is_const = query.symbol->is_const;
+        node->is_literal = query.symbol->is_literal;
+        node->current_value = query.symbol->current_value;
+        node->symbol_ptr = query.symbol;
+        node->owner_level = query.owner_level;
+        node->field_index = query.field_index;
 
-        if (ptr->node != nullptr) {
-            if (ptr->node->type == ast_type_function_definition) {
-                if (ptr->node->HasAttribute("inline")) {
+        if (query.symbol->node != nullptr) {
+            if (query.symbol->node->type == ast_type_function_definition) {
+                if (query.symbol->node->HasAttribute("inline")) {
                     ErrorMsg(Msg_prohibited_action_attribute, node->location, "inline");
                 }
             }
 
             // do not increment use count for const literals, they will be inlined
             if (!(config::optimize_constant_folding &&
-                node->is_const && node->is_literal && node->current_value != nullptr)) {
-                IncrementUseCount(ptr->node);
+                node->is_const && 
+                node->is_literal && 
+                node->current_value != nullptr)) {
+                IncrementUseCount(query.symbol->node);
             }
         }
     } else {
@@ -559,10 +567,10 @@ void SemanticAnalyzer::Accept(AstFunctionDefinition *node)
         ErrorMsg(Msg_identifier_is_module, node->location, node->name);
     } else {
         if (!node->HasAttribute("inline")) {
-            Symbol info;
-            info.node = node;
-            info.original_name = node->name;
-            state_ptr->CurrentLevel().locals.push_back({ var_name, info });
+            Symbol symbol;
+            symbol.node = node;
+            symbol.original_name = node->name;
+            state_ptr->CurrentLevel().locals.push_back({ var_name, symbol });
         }
 
         AstBlock *body = dynamic_cast<AstBlock*>(node->block.get());
@@ -616,12 +624,13 @@ void SemanticAnalyzer::Accept(AstFunctionDefinition *node)
             IncreaseBlock(LevelType::Level_function);
 
             // declare a variable for all parameters
-            for (auto &&param : node->arguments) {
-                Symbol info;
-                info.node = nullptr;
-                info.original_name = param;
+            for (const std::string &param : node->arguments) {
                 std::string var_name = state_ptr->MakeVariableName(param, node->module);
-                state_ptr->CurrentLevel().locals.push_back({ var_name, info });
+
+                Symbol symbol;
+                symbol.node = nullptr;
+                symbol.original_name = param;
+                state_ptr->CurrentLevel().locals.push_back({ var_name, symbol });
             }
 
             Accept(body);
@@ -630,11 +639,11 @@ void SemanticAnalyzer::Accept(AstFunctionDefinition *node)
             if (node->HasAttribute("inline")) {
                 // Inline functions cannot be recursive, so we will declare
                 // the symbol here to avoid recursive usage.
-                Symbol info;
-                info.node = node;
-                info.original_name = node->name;
-                info.is_const = true;
-                state_ptr->CurrentLevel().locals.push_back({ var_name, info });
+                Symbol symbol;
+                symbol.node = node;
+                symbol.original_name = node->name;
+                symbol.is_const = true;
+                state_ptr->CurrentLevel().locals.push_back({ var_name, symbol });
             }
         }
     }
@@ -692,12 +701,13 @@ void SemanticAnalyzer::Accept(AstFunctionExpression *node)
         IncreaseBlock(LevelType::Level_function);
 
         // declare a variable for all parameters
-        for (auto &&param : node->arguments) {
-            Symbol info;
-            info.node = node;
-            info.original_name = param;
+        for (const std::string &param : node->arguments) {
             std::string var_name = state_ptr->MakeVariableName(param, node->module);
-            state_ptr->CurrentLevel().locals.push_back({ var_name, info });
+
+            Symbol symbol;
+            symbol.node = node;
+            symbol.original_name = param;
+            state_ptr->CurrentLevel().locals.push_back({ var_name, symbol });
         }
 
         Accept(body);
@@ -707,17 +717,17 @@ void SemanticAnalyzer::Accept(AstFunctionExpression *node)
 
 void SemanticAnalyzer::Accept(AstFunctionCall *node)
 {
-    Symbol *ptr = nullptr;
-    std::string var_name = state_ptr->MakeVariableName(node->name, node->module);
-    if (FindVariable(var_name, false, ptr)) {
-        if (ptr->is_alias) {
+    std::string var_name(state_ptr->MakeVariableName(node->name, node->module));
+    SymbolQueryResult query = FindVariable(var_name, false);
+    if (query) {
+        if (query.symbol->is_alias) {
             node->is_alias = true;
-            node->alias_to = ptr->node;
+            node->alias_to = query.symbol->node;
         }
 
-        node->definition = ptr->node;
+        node->definition = query.symbol->node;
 
-        IncrementUseCount(ptr->node);
+        IncrementUseCount(query.symbol->node);
 
         for (int i = node->arguments.size() - 1; i >= 0; i--) {
             // Push each argument onto the stack
@@ -761,12 +771,12 @@ void SemanticAnalyzer::Accept(AstEnum *node)
         } else if (state_ptr->FindModule(it.first, it.second->module)) {
             ErrorMsg(Msg_identifier_is_module, it.second->location, it.first);
         } else {
-            Symbol info;
-            info.node = it.second.get();
-            info.original_name = it.first;
-            info.is_alias = true;
-            info.is_const = true;
-            state_ptr->CurrentLevel().locals.push_back({ var_name, info });
+            Symbol symbol;
+            symbol.node = it.second.get();
+            symbol.original_name = it.first;
+            symbol.is_alias = true;
+            symbol.is_const = true;
+            state_ptr->CurrentLevel().locals.push_back({ var_name, symbol });
         }
     }
 }
@@ -887,27 +897,40 @@ void SemanticAnalyzer::IncrementUseCount(AstNode *ptr)
     }
 }
 
-bool SemanticAnalyzer::FindVariable(const std::string &name, bool only_this_scope)
+SymbolQueryResult SemanticAnalyzer::FindVariable(const std::string &identifier, bool only_this_scope)
 {
-    Symbol *tmp = nullptr;
-    return FindVariable(name, only_this_scope, tmp);
-}
+    SymbolQueryResult result;
+    result.found = false;
+    result.symbol = nullptr;
+    result.owner_level = 0;
+    result.field_index = 0;
 
-bool SemanticAnalyzer::FindVariable(const std::string &name, bool only_this_scope, Symbol *&out)
-{
     // start at current level
     int start = state_ptr->level;
     while (start >= compiler_global_level) {
         auto &level = state_ptr->levels[start];
-        auto it = std::find_if(level.locals.begin(), level.locals.end(),
-            [&name](const std::pair<std::string, Symbol> &elt)
+        /*auto it = std::find_if(level.locals.begin(), level.locals.end(),
+            [&identifier](const std::pair<std::string, Symbol> &elt)
         {
-            return elt.first == name;
+            return elt.first == identifier;
         });
 
         if (it != level.locals.end()) {
-            out = &it->second;
-            return true;
+            result.owner_level = start;
+            result.field_index = 
+        }*/
+
+        for (size_t i = 0; i < level.locals.size(); i++) {
+            const auto &key = level.locals[i].first;
+            auto &value = level.locals[i].second;
+            if (key == identifier) {
+                // found the symbol
+                result.found = true;
+                result.symbol = &value;
+                result.owner_level = start;
+                result.field_index = i;
+                return result;
+            }
         }
 
         if (only_this_scope) {
@@ -915,7 +938,8 @@ bool SemanticAnalyzer::FindVariable(const std::string &name, bool only_this_scop
         }
         start--;
     }
-    return false;
+
+    return result;
 }
 
 void SemanticAnalyzer::IncreaseBlock(LevelType type)
@@ -928,11 +952,12 @@ void SemanticAnalyzer::IncreaseBlock(LevelType type)
 void SemanticAnalyzer::DecreaseBlock()
 {
     LevelInfo &level = state_ptr->CurrentLevel();
-    for (auto &&v : level.locals) {
-        if (v.second.node != nullptr) {
-            auto usecount = state_ptr->use_counts[v.second.node];
+    for (auto &&local : level.locals) {
+        if (local.second.node != nullptr) {
+            auto usecount = state_ptr->use_counts[local.second.node];
             if (usecount == 0) {
-                WarningMessage(Msg_unused_identifier, v.second.node->location, v.second.original_name);
+                WarningMessage(Msg_unused_identifier, 
+                    local.second.node->location, local.second.original_name);
             }
         }
     }

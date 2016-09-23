@@ -8,14 +8,12 @@ class Object;
 class Reference {
 public:
     Reference();
-    explicit Reference(Object * &ref);
     Reference(const Reference &other);
+    explicit Reference(Object * &ref);
 
-    // returns the actual pointer held inside.
-    Object **Ptr() const;
-
-    Object *&Ref();
-    const Object *const &Ref() const;
+    inline Object **Reference::Ptr() const { return ref; }
+    inline Object *&Reference::Ref() { return *ref; }
+    inline const Object *const &Reference::Ref() const { return *ref; }
 
     void DeleteObject();
 

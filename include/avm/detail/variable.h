@@ -89,7 +89,7 @@ public:
         Otherwise, the original value is retrieved.
     */
     template <typename T>
-    T Cast()
+    inline T Cast()
     {
         typedef typename std::decay<T>::type Decayed;
         if (this == nullptr) {
@@ -108,7 +108,7 @@ protected:
 private:
     template <typename Decayed, typename T>
     typename std::enable_if<std::is_arithmetic<Decayed>::value, T>::type
-        GetValue()
+        inline GetValue()
     {
         if (type == Type_int) {
             return (T)stack_value.int_value;
@@ -121,7 +121,7 @@ private:
 
     template <typename Decayed, typename T>
     typename std::enable_if<!std::is_arithmetic<Decayed>::value, T>::type
-        GetValue()
+        inline GetValue()
     {
         return value.Get<T>();
     }

@@ -3,6 +3,8 @@
 #include <detail/exception.h>
 #include <common/util/logger.h>
 
+#include <sstream>
+
 namespace avm {
 VMInstance::VMInstance()
 {
@@ -11,14 +13,18 @@ VMInstance::VMInstance()
 
 VMInstance::~VMInstance()
 {
-    std::cout << "\n\nstack dump:\n\n";
-    for (auto &&it : state->stack) {
-        std::cout << it.Ref()->ToString() << "\n";
-    }
-
     GC();
-    std::cout << "\n\nheap dump:\n\n";
-    state->heap.DumpHeap();
+
+    std::stringstream ss;
+    ss << "Stack dump:\n";
+    for (auto &&it : state->stack) {
+        ss << "\t" << it.Ref()->ToString() << "\n";
+    }
+    ss << "\nHeap dump:\n";
+    state->heap.DumpHeap(ss);
+
+    std::cout << ss.str() << "\n";
+
     delete state;
 }
 
@@ -224,14 +230,14 @@ void VMInstance::PrintObjects(size_t nargs)
 
 void VMInstance::GC()
 {
-    DebugLog("run gc");
+    DEBUG_LOG("run gc");
     MarkObjects();
     state->heap.Sweep();
 }
 
 void VMInstance::SuggestGC()
 {
-    DebugLog("suggest gc");
+    DEBUG_LOG("suggest gc");
     if (state->heap.NumObjects() >= state->max_objects) {
         GC();
 
@@ -243,14 +249,14 @@ void VMInstance::SuggestGC()
 
 void VMInstance::MarkObjects()
 {
-    for (auto &&it : state->stack) {
-        it.Ref()->Mark();
+    for (Reference &ref : state->stack) {
+        ref.Ref()->Mark();
     }
 
     // start at current level
     int start = state->frame_level;
     while (start >= AVM_LEVEL_GLOBAL) {
-        if (state->frames[start]) {
+        if (state->frames[start] != nullptr) {
             for (auto &&it : state->frames[start]->locals) {
                 it.second.Ref()->Mark();
             }
@@ -267,62 +273,61 @@ void VMInstance::MarkObjects()
     should only be incremented only if the conditions within the "if" statement
     evaluate to true.
 */
-void VMInstance::HandleInstruction(OpCode_t opcode)
+void VMInstance::HandleInstruction(Opcode_t opcode)
 {
     switch (opcode) {
-    case OpCode_ifl:
+    case Opcode_ifl:
     {
         OpenFrame();
-        DebugLog("Increase frame level to: %d. Read level is: %d", state->frame_level, state->read_level);
-
+        DEBUG_LOG("Increase frame level to: %d. Read level is: %d", state->frame_level, state->read_level);
         break;
     }
-    case OpCode_dfl:
+    case Opcode_dfl:
     {
-        bool should_gc = false;
+        bool should_suggest_gc = false;
         if (state->read_level == state->frame_level) {
-            should_gc = true;
+            should_suggest_gc = true;
             --state->read_level;
-            DebugLog("Decrease read level to: %d", state->read_level);
+            DEBUG_LOG("Decrease read level to: %d", state->read_level);
         }
 
         CloseFrame();
-        DebugLog("Decrease frame level to: %d", state->frame_level);
+        DEBUG_LOG("Decrease frame level to: %d", state->frame_level);
 
-        if (should_gc) {
+        if (should_suggest_gc) {
             // collect garbage to free variables from previous frame
             SuggestGC();
         }
 
         break;
     }
-    case OpCode_irl:
+    case Opcode_irl:
     {
         if (state->read_level == state->frame_level) {
             ++state->read_level;
-            DebugLog("Increase read level to: %d", state->read_level);
+            DEBUG_LOG("Increase read level to: %d", state->read_level);
         }
 
         break;
     }
-    case OpCode_drl:
+    case Opcode_drl:
     {
         if (state->read_level == state->frame_level) {
             uint8_t count;
             state->stream->Read(&count);
 
             state->read_level -= count;
-            DebugLog("Decrease read level to: %d", state->read_level);
+            DEBUG_LOG("Decrease read level to: %d", state->read_level);
         } else {
             state->stream->Skip(sizeof(uint8_t));
         }
 
         break;
     }
-    case OpCode_irl_if_true:
+    case Opcode_irl_if_true:
     {
         if (state->read_level == state->frame_level) {
-            auto *frame = state->frames[state->frame_level];
+            Frame *frame = state->frames[state->frame_level];
 
             Variable *top = dynamic_cast<Variable*>(state->stack.back().Ref());
             if (!top) {
@@ -336,22 +341,22 @@ void VMInstance::HandleInstruction(OpCode_t opcode)
                 state->HandleException(Exception(ex.what()));
             }
 
-            DebugLog("If result: %s", (result ? "true" : "false"));
+            DEBUG_LOG("If result: %s", (result ? "true" : "false"));
 
             frame->last_cond = result;
 
             if (result) {
                 ++state->read_level;
-                DebugLog("Increase read level to: %d", state->read_level);
+                DEBUG_LOG("Increase read level to: %d", state->read_level);
             }
         }
 
         break;
     }
-    case OpCode_irl_if_false:
+    case Opcode_irl_if_false:
     {
         if (state->read_level == state->frame_level) {
-            auto *frame = state->frames[state->frame_level];
+            Frame *frame = state->frames[state->frame_level];
 
             Variable *top = dynamic_cast<Variable*>(state->stack.back().Ref());
             if (!top) {
@@ -365,23 +370,23 @@ void VMInstance::HandleInstruction(OpCode_t opcode)
                 state->HandleException(Exception(ex.what()));
             }
 
-            DebugLog("If result: %s", (result ? "true" : "false"));
+            DEBUG_LOG("If result: %s", (result ? "true" : "false"));
 
             frame->last_cond = result;
 
             if (!result) {
                 ++state->read_level;
-                DebugLog("Increase read level to: %d", state->read_level);
+                DEBUG_LOG("Increase read level to: %d", state->read_level);
             }
         }
 
         break;
     }
-    case OpCode_try_catch_block:
+    case Opcode_try_catch_block:
     {
         if (state->read_level == state->frame_level) {
-            auto old_frame_level = state->frame_level;
-            auto old_read_level = state->read_level;
+            int old_frame_level = state->frame_level;
+            int old_read_level = state->read_level;
 
             bool exception_occured = false;
 
@@ -389,7 +394,7 @@ void VMInstance::HandleInstruction(OpCode_t opcode)
             state->can_handle_exceptions = true;
 
             do {
-                OpCode_t next_ins;
+                Opcode_t next_ins;
                 state->stream->Read(&next_ins);
                 state->vm->HandleInstruction(next_ins);
 
@@ -407,7 +412,7 @@ void VMInstance::HandleInstruction(OpCode_t opcode)
             if (exception_occured) {
                 ++state->read_level;
                 do {
-                    OpCode_t next_ins;
+                    Opcode_t next_ins;
                     state->stream->Read(&next_ins);
                     state->vm->HandleInstruction(next_ins);
                 } while (state->frame_level != old_frame_level);
@@ -416,27 +421,30 @@ void VMInstance::HandleInstruction(OpCode_t opcode)
 
         break;
     }
-    case OpCode_store_address:
+    case Opcode_store_address:
     {
-        uint32_t id;
-        state->stream->Read(&id);
+        struct {
+            uint32_t id;
+            uint64_t address;
+        } data;
 
-        uint64_t address;
-        state->stream->Read(&address);
-        state->block_positions[id] = address;
+        state->stream->Read(&data.id);
+        state->stream->Read(&data.address);
 
-        DebugLog("Create block: %d at position: %d", id, address);
+        state->block_positions[data.id] = data.address;
+
+        DEBUG_LOG("Create block: %d at position: %d", data.id, data.address);
 
         break;
     }
-    case OpCode_jump:
+    case Opcode_jump:
     {
         if (state->read_level == state->frame_level) {
             uint32_t id;
             state->stream->Read(&id);
 
             auto position = state->block_positions[id];
-            DebugLog("Go to block: %u at position: %d", id, position);
+            DEBUG_LOG("Go to block: %u at position: %d", id, position);
 
             state->stream->Seek(position);
         } else {
@@ -445,7 +453,7 @@ void VMInstance::HandleInstruction(OpCode_t opcode)
 
         break;
     }
-    case OpCode_jump_if_true:
+    case Opcode_jump_if_true:
     {
         /*if (state->read_level == state->frame_level &&
             state->frames[state->frame_level]->last_cond) {
@@ -453,7 +461,7 @@ void VMInstance::HandleInstruction(OpCode_t opcode)
             state->stream->Read(&id);
 
             auto position = state->block_positions[id];
-            DebugLog("Go to block: %u at position: %d", id, position);
+            DEBUG_LOG("Go to block: %u at position: %d", id, position);
 
             state->stream->Seek(position);
         } else {
@@ -475,7 +483,7 @@ void VMInstance::HandleInstruction(OpCode_t opcode)
                 state->HandleException(Exception(ex.what()));
             }
 
-            DebugLog("If result: %s", (result ? "true" : "false"));
+            DEBUG_LOG("If result: %s", (result ? "true" : "false"));
 
             frame->last_cond = result;
 
@@ -484,7 +492,7 @@ void VMInstance::HandleInstruction(OpCode_t opcode)
                 state->stream->Read(&id);
 
                 auto position = state->block_positions[id];
-                DebugLog("Go to block: %u at position: %d", id, position);
+                DEBUG_LOG("Go to block: %u at position: %d", id, position);
                 state->stream->Seek(position);
             } else {
                 state->stream->Skip(sizeof(uint32_t));
@@ -495,7 +503,7 @@ void VMInstance::HandleInstruction(OpCode_t opcode)
 
         break;
     }
-    case OpCode_jump_if_false:
+    case Opcode_jump_if_false:
     {
         /*if (state->read_level == state->frame_level &&
             !state->frames[state->frame_level]->last_cond) {
@@ -503,7 +511,7 @@ void VMInstance::HandleInstruction(OpCode_t opcode)
             state->stream->Read(&id);
 
             auto position = state->block_positions[id];
-            DebugLog("Go to block: %u at position: %d", id, position);
+            DEBUG_LOG("Go to block: %u at position: %d", id, position);
 
             state->stream->Seek(position);
         } else {
@@ -525,7 +533,7 @@ void VMInstance::HandleInstruction(OpCode_t opcode)
                 state->HandleException(Exception(ex.what()));
             }
 
-            DebugLog("If result: %s", (result ? "true" : "false"));
+            DEBUG_LOG("If result: %s", (result ? "true" : "false"));
 
             frame->last_cond = result;
 
@@ -534,7 +542,7 @@ void VMInstance::HandleInstruction(OpCode_t opcode)
                 state->stream->Read(&id);
 
                 auto position = state->block_positions[id];
-                DebugLog("Go to block: %u at position: %d", id, position);
+                DEBUG_LOG("Go to block: %u at position: %d", id, position);
                 state->stream->Seek(position);
             } else {
                 state->stream->Skip(sizeof(uint32_t));
@@ -545,7 +553,7 @@ void VMInstance::HandleInstruction(OpCode_t opcode)
 
         break;
     }
-    case OpCode_store_as_local:
+    case Opcode_store_as_local:
     {
         int32_t len;
         state->stream->Read(&len);
@@ -554,7 +562,7 @@ void VMInstance::HandleInstruction(OpCode_t opcode)
             achar *str = new achar[len];
             state->stream->Read(str, len * sizeof(achar));
 
-            DebugLog("Storing top in local: %s", str);
+            DEBUG_LOG("Storing top in local: %s", str);
 
             auto frame = state->frames[state->frame_level];
             auto top = state->stack.back(); state->stack.pop_back();
@@ -578,7 +586,7 @@ void VMInstance::HandleInstruction(OpCode_t opcode)
 
         break;
     }
-    case OpCode_new_native_object:
+    case Opcode_new_native_object:
     {
         int32_t len;
         state->stream->Read(&len);
@@ -587,7 +595,7 @@ void VMInstance::HandleInstruction(OpCode_t opcode)
             achar *str = new achar[len];
             state->stream->Read(str, len * sizeof(achar));
 
-            DebugLog("Create native class instance: %s", str);
+            DEBUG_LOG("Create native class instance: %s", str);
             NewNativeObject(str);
 
             delete[] str;
@@ -597,7 +605,7 @@ void VMInstance::HandleInstruction(OpCode_t opcode)
 
         break;
     }
-    case OpCode_array_index:
+    case Opcode_array_index:
     {
         auto right = state->stack.back(); state->stack.pop_back();
         auto left = state->stack.back(); state->stack.pop_back();
@@ -631,7 +639,7 @@ void VMInstance::HandleInstruction(OpCode_t opcode)
 
         break;
     }
-    case OpCode_new_member:
+    case Opcode_new_member:
     {
         int32_t len;
         state->stream->Read(&len);
@@ -640,7 +648,7 @@ void VMInstance::HandleInstruction(OpCode_t opcode)
             achar *str = new achar[len];
             state->stream->Read(str, len * sizeof(achar));
 
-            DebugLog("Add member: %s", str);
+            DEBUG_LOG("Add member: %s", str);
 
             auto object = state->stack.back();
             auto ref = Reference(*state->heap.AllocObject<Variable>());
@@ -655,7 +663,7 @@ void VMInstance::HandleInstruction(OpCode_t opcode)
 
         break;
     }
-    case OpCode_load_member:
+    case Opcode_load_member:
     {
         int32_t len;
         state->stream->Read(&len);
@@ -664,7 +672,7 @@ void VMInstance::HandleInstruction(OpCode_t opcode)
             achar *str = new achar[len];
             state->stream->Read(str, len * sizeof(achar));
 
-            DebugLog("Load member: %s", str);
+            DEBUG_LOG("Load member: %s", str);
 
             auto ref = state->stack.back(); state->stack.pop_back();
 
@@ -680,10 +688,10 @@ void VMInstance::HandleInstruction(OpCode_t opcode)
 
         break;
     }
-    case OpCode_new_structure:
+    case Opcode_new_structure:
     {
         if (state->read_level == state->frame_level) {
-            DebugLog("New structure");
+            DEBUG_LOG("New structure");
 
             auto ref = Reference(*state->heap.AllocNull());
             auto var = new Variable(); /// \todo: Make a unique structure class
@@ -697,43 +705,43 @@ void VMInstance::HandleInstruction(OpCode_t opcode)
         }
         break;
     }
-    case OpCode_new_function:
+    case Opcode_new_function:
     {
         if (state->read_level == state->frame_level) {
-            uint8_t global;
-            state->stream->Read(&global);
+            struct {
+                uint32_t num_args;
+                uint8_t is_variadic;
+                uint32_t id;
+            } function_info;
 
-            uint32_t nargs;
-            state->stream->Read(&nargs);
+            state->stream->Read(&function_info.num_args);
+            state->stream->Read(&function_info.is_variadic);
+            state->stream->Read(&function_info.id);
 
-            uint8_t variadic;
-            state->stream->Read(&variadic);
+            DEBUG_LOG("Pushing function to stack");
 
-            uint64_t address;
-            state->stream->Read(&address);
+            uint64_t pos = state->block_positions[function_info.id];
 
-            DebugLog("Pushing function to stack");
+            auto ref = Reference(*state->heap.AllocObject<Func>(pos, 
+                function_info.num_args, (bool)function_info.is_variadic));
 
-            uint64_t pos = global ? address : static_cast<uint64_t>(state->stream->Position());
-
-            auto ref = Reference(*state->heap.AllocObject<Func>(pos, nargs, static_cast<bool>(variadic)));
             ref.Ref()->flags |= Object::FLAG_TEMPORARY;
             PushReference(ref);
         } else {
             state->stream->Skip(sizeof(uint8_t));
             state->stream->Skip(sizeof(uint32_t));
             state->stream->Skip(sizeof(uint8_t));
-            state->stream->Skip(sizeof(uint64_t));
+            state->stream->Skip(sizeof(uint32_t));
         }
 
         break;
     }
-    case OpCode_invoke_object:
+    case Opcode_invoke_object:
         if (state->read_level == state->frame_level) {
             uint32_t nargs;
             state->stream->Read(&nargs);
 
-            DebugLog("Invoking");
+            DEBUG_LOG("Invoking");
 
             Reference reference = state->stack.back(); state->stack.pop_back();
             reference.Ref()->invoke(state, nargs);
@@ -745,33 +753,30 @@ void VMInstance::HandleInstruction(OpCode_t opcode)
         }
 
         break;
-    case OpCode_return:
+    case Opcode_return:
     {
-        if (state->read_level == state->frame_level) {
-            // handled in function class
-        }
-
+        // handled in function class
         break;
     }
-    case OpCode_leave:
+    case Opcode_leave:
         if (state->read_level == state->frame_level) {
-            DebugLog("Leave block");
+            DEBUG_LOG("Leave block");
 
             CloseFrame();
-            DebugLog("Decrease frame level to: %d", state->frame_level);
+            DEBUG_LOG("Decrease frame level to: %d", state->frame_level);
 
             --state->read_level;
-            DebugLog("Decrease read level to: %d", state->read_level);
+            DEBUG_LOG("Decrease read level to: %d", state->read_level);
         }
 
         break;
-    case OpCode_break:
+    case Opcode_break:
     {
         if (state->read_level == state->frame_level) {
             int32_t levels_to_skip;
             state->stream->Read(&levels_to_skip);
 
-            DebugLog("Loop break");
+            DEBUG_LOG("Loop break");
             state->frames[state->frame_level - levels_to_skip]->last_cond = false;
             state->read_level -= levels_to_skip;
         } else {
@@ -780,13 +785,13 @@ void VMInstance::HandleInstruction(OpCode_t opcode)
 
         break;
     }
-    case OpCode_continue:
+    case Opcode_continue:
     {
         if (state->read_level == state->frame_level) {
             int32_t levels_to_skip;
             state->stream->Read(&levels_to_skip);
 
-            DebugLog("Loop continue");
+            DEBUG_LOG("Loop continue");
             state->frames[state->frame_level - levels_to_skip]->last_cond = true;
             state->read_level -= levels_to_skip;
         } else {
@@ -795,7 +800,7 @@ void VMInstance::HandleInstruction(OpCode_t opcode)
 
         break;
     }
-    case OpCode_print:
+    case Opcode_print:
     {
         if (state->read_level == state->frame_level) {
             uint32_t nargs;
@@ -807,7 +812,7 @@ void VMInstance::HandleInstruction(OpCode_t opcode)
 
         break;
     }
-    case OpCode_load_local:
+    case Opcode_load_local:
     {
         int32_t len;
         state->stream->Read(&len);
@@ -816,7 +821,7 @@ void VMInstance::HandleInstruction(OpCode_t opcode)
             achar *str = new achar[len];
             state->stream->Read(str, len * sizeof(achar));
 
-            DebugLog("Loading variable: '%s'", str);
+            DEBUG_LOG("Loading variable: '%s'", str);
 
             int start = state->frame_level;
             bool found = false;
@@ -846,13 +851,30 @@ void VMInstance::HandleInstruction(OpCode_t opcode)
 
         break;
     }
-    case OpCode_load_integer:
+    case Opcode_load_field:
+    {
+        if (state->read_level == state->frame_level) {
+            int32_t index;
+            state->stream->Read(&index);
+
+            DEBUG_LOG("Loading field #%d", index);
+
+            Frame *frame = state->frames[state->frame_level];
+            PushReference(frame->locals[index].second);
+
+        } else {
+            state->stream->Skip(sizeof(int32_t));
+        }
+
+        break;
+    }
+    case Opcode_load_integer:
     {
         if (state->read_level == state->frame_level) {
             AVMInteger_t value;
             state->stream->Read(&value);
 
-            DebugLog("Load integer: %d", value);
+            DEBUG_LOG("Load integer: %d", value);
             PushInt(value);
         } else {
             state->stream->Skip(sizeof(AVMInteger_t));
@@ -860,13 +882,13 @@ void VMInstance::HandleInstruction(OpCode_t opcode)
 
         break;
     }
-    case OpCode_load_float:
+    case Opcode_load_float:
     {
         if (state->read_level == state->frame_level) {
             AVMFloat_t value;
             state->stream->Read(&value);
 
-            DebugLog("Load float: %f", value);
+            DEBUG_LOG("Load float: %f", value);
             PushFloat(value);
         } else {
             state->stream->Skip(sizeof(AVMFloat_t));
@@ -874,7 +896,7 @@ void VMInstance::HandleInstruction(OpCode_t opcode)
 
         break;
     }
-    case OpCode_load_string:
+    case Opcode_load_string:
     {
         int32_t len;
         state->stream->Read(&len);
@@ -883,7 +905,7 @@ void VMInstance::HandleInstruction(OpCode_t opcode)
             achar *str = new achar[len];
             state->stream->Read(str, len * sizeof(achar));
 
-            DebugLog("Load string: %s", str);
+            DEBUG_LOG("Load string: %s", str);
             PushString(AVMString_t(str));
 
             delete[] str;
@@ -893,10 +915,10 @@ void VMInstance::HandleInstruction(OpCode_t opcode)
 
         break;
     }
-    case OpCode_load_null:
+    case Opcode_load_null:
     {
         if (state->read_level == state->frame_level) {
-            DebugLog("Load null");
+            DEBUG_LOG("Load null");
 
             auto ref = Reference(*state->heap.AllocObject<Variable>());
             ref.Ref()->flags |= Object::FLAG_TEMPORARY;
@@ -905,244 +927,244 @@ void VMInstance::HandleInstruction(OpCode_t opcode)
 
         break;
     }
-    case OpCode_pop:
+    case Opcode_pop:
     {
         if (state->read_level == state->frame_level) {
-            DebugLog("Pop stack");
+            DEBUG_LOG("Pop stack");
             PopStack();
         }
 
         break;
     }
-    case OpCode_unary_minus:
+    case Opcode_unary_minus:
     {
         if (state->read_level == state->frame_level) {
-            DebugLog("Unary -");
+            DEBUG_LOG("Unary -");
             Operation(&Variable::Negate);
         }
 
         break;
     }
-    case OpCode_unary_not:
+    case Opcode_unary_not:
     {
         if (state->read_level == state->frame_level) {
-            DebugLog("Unary !");
+            DEBUG_LOG("Unary !");
             Operation(&Variable::LogicalNot);
         }
 
         break;
     }
-    case OpCode_add:
+    case Opcode_add:
     {
         if (state->read_level == state->frame_level) {
-            DebugLog("Binary +");
+            DEBUG_LOG("Binary +");
             Operation(&Variable::Add);
         }
 
         break;
     }
-    case OpCode_sub:
+    case Opcode_sub:
     {
         if (state->read_level == state->frame_level) {
-            DebugLog("Binary -");
+            DEBUG_LOG("Binary -");
             Operation(&Variable::Subtract);
         }
 
         break;
     }
-    case OpCode_mul:
+    case Opcode_mul:
     {
         if (state->read_level == state->frame_level) {
-            DebugLog("Binary *");
+            DEBUG_LOG("Binary *");
             Operation(&Variable::Multiply);
         }
 
         break;
     }
-    case OpCode_div:
+    case Opcode_div:
     {
         if (state->read_level == state->frame_level) {
-            DebugLog("Binary /");
+            DEBUG_LOG("Binary /");
             Operation(&Variable::Divide);
         }
 
         break;
     }
-    case OpCode_mod:
+    case Opcode_mod:
     {
         if (state->read_level == state->frame_level) {
-            DebugLog("Binary %");
+            DEBUG_LOG("Binary %");
             Operation(&Variable::Modulus);
         }
 
         break;
     }
-    case OpCode_pow:
+    case Opcode_pow:
     {
         if (state->read_level == state->frame_level) {
-            DebugLog("Binary **");
+            DEBUG_LOG("Binary **");
             Operation(&Variable::Power);
         }
 
         break;
     }
-    case OpCode_and:
+    case Opcode_and:
     {
         if (state->read_level == state->frame_level) {
-            DebugLog("Binary &&");
+            DEBUG_LOG("Binary &&");
             Operation(&Variable::LogicalAnd);
         }
 
         break;
     }
-    case OpCode_or:
+    case Opcode_or:
     {
         if (state->read_level == state->frame_level) {
-            DebugLog("Binary ||");
+            DEBUG_LOG("Binary ||");
             Operation(&Variable::LogicalOr);
         }
 
         break;
     }
-    case OpCode_eql:
+    case Opcode_eql:
     {
         if (state->read_level == state->frame_level) {
-            DebugLog("Binary ==");
+            DEBUG_LOG("Binary ==");
             Operation(&Variable::Equals);
         }
 
         break;
     }
-    case OpCode_neql:
+    case Opcode_neql:
     {
         if (state->read_level == state->frame_level) {
-            DebugLog("Binary !=");
+            DEBUG_LOG("Binary !=");
             Operation(&Variable::NotEqual);
         }
 
         break;
     }
-    case OpCode_less:
+    case Opcode_less:
     {
         if (state->read_level == state->frame_level) {
-            DebugLog("Binary <");
+            DEBUG_LOG("Binary <");
             Operation(&Variable::Less);
         }
 
         break;
     }
-    case OpCode_greater:
+    case Opcode_greater:
     {
         if (state->read_level == state->frame_level) {
-            DebugLog("Binary >");
+            DEBUG_LOG("Binary >");
             Operation(&Variable::Greater);
         }
 
         break;
     }
-    case OpCode_less_eql:
+    case Opcode_less_eql:
     {
         if (state->read_level == state->frame_level) {
-            DebugLog("Binary <=");
+            DEBUG_LOG("Binary <=");
             Operation(&Variable::LessOrEqual);
         }
 
         break;
     }
-    case OpCode_greater_eql:
+    case Opcode_greater_eql:
     {
         if (state->read_level == state->frame_level) {
-            DebugLog("Binary >=");
+            DEBUG_LOG("Binary >=");
             Operation(&Variable::GreaterOrEqual);
         }
 
         break;
     }
-    case OpCode_bit_and:
+    case Opcode_bit_and:
     {
         if (state->read_level == state->frame_level) {
-            DebugLog("Binary &");
+            DEBUG_LOG("Binary &");
             Operation(&Variable::BitwiseAnd);
         }
 
         break;
     }
-    case OpCode_bit_or:
+    case Opcode_bit_or:
     {
         if (state->read_level == state->frame_level) {
-            DebugLog("Binary |");
+            DEBUG_LOG("Binary |");
             Operation(&Variable::BitwiseOr);
         }
 
         break;
     }
-    case OpCode_bit_xor:
+    case Opcode_bit_xor:
     {
         if (state->read_level == state->frame_level) {
-            DebugLog("Binary &");
+            DEBUG_LOG("Binary &");
             Operation(&Variable::BitwiseXor);
         }
 
         break;
     }
-    case OpCode_left_shift:
+    case Opcode_left_shift:
     {
         if (state->read_level == state->frame_level) {
-            DebugLog("Binary <<");
+            DEBUG_LOG("Binary <<");
             Operation(&Variable::LeftShift);
         }
 
         break;
     }
-    case OpCode_right_shift:
+    case Opcode_right_shift:
     {
         if (state->read_level == state->frame_level) {
-            DebugLog("Binary >>");
+            DEBUG_LOG("Binary >>");
             Operation(&Variable::RightShift);
         }
 
         break;
     }
-    case OpCode_assign:
+    case Opcode_assign:
     {
         if (state->read_level == state->frame_level) {
-            DebugLog("Binary =");
+            DEBUG_LOG("Binary =");
             Assignment();
         }
 
         break;
     }
-    case OpCode_add_assign:
+    case Opcode_add_assign:
     {
         if (state->read_level == state->frame_level) {
-            DebugLog("Binary +=");
+            DEBUG_LOG("Binary +=");
             Assignment(&Variable::Add);
         }
 
         break;
     }
-    case OpCode_sub_assign:
+    case Opcode_sub_assign:
     {
         if (state->read_level == state->frame_level) {
-            DebugLog("Binary -=");
+            DEBUG_LOG("Binary -=");
             Assignment(&Variable::Subtract);
         }
 
         break;
     }
-    case OpCode_mul_assign:
+    case Opcode_mul_assign:
     {
         if (state->read_level == state->frame_level) {
-            DebugLog("Binary *=");
+            DEBUG_LOG("Binary *=");
             Assignment(&Variable::Multiply);
         }
 
         break;
     }
-    case OpCode_div_assign:
+    case Opcode_div_assign:
     {
         if (state->read_level == state->frame_level) {
-            DebugLog("Binary /=");
+            DEBUG_LOG("Binary /=");
             Assignment(&Variable::Divide);
         }
 
@@ -1150,8 +1172,8 @@ void VMInstance::HandleInstruction(OpCode_t opcode)
     }
     default:
     {
-        auto last_pos = (((unsigned long)state->stream->Position()) - sizeof(OpCode_t));
-        std::cout << "Unrecognized instruction '" << (int)opcode << "' at position: " << last_pos << "\n";
+        auto last_pos = (((unsigned long)state->stream->Position()) - sizeof(Opcode_t));
+        std::cout << "Unrecognized instruction '" << (int)opcode << "' at position: " << std::hex << last_pos << "\n";
         break;
     }
     }
@@ -1162,7 +1184,7 @@ void VMInstance::Execute(ByteStream *bs)
     state->stream = bs;
 
     while (state->stream->Position() < state->stream->Max()) {
-        OpCode_t ins;
+        Opcode_t ins;
         state->stream->Read(&ins);
         HandleInstruction(ins);
     }

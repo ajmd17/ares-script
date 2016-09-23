@@ -2,11 +2,16 @@
 
 namespace avm {
 VMState::VMState(VMInstance *vm)
-    : vm(vm), frame_level(AVM_LEVEL_GLOBAL), read_level(AVM_LEVEL_GLOBAL),
-    can_handle_exceptions(false),
-    num_objects(0), max_objects(GC_THRESHOLD_MIN), max_heap_size(1000) /* in bytes */
+    : vm(vm), 
+      frame_level(AVM_LEVEL_GLOBAL), 
+      read_level(AVM_LEVEL_GLOBAL),
+      can_handle_exceptions(false),
+      num_objects(0), 
+      max_objects(GC_THRESHOLD_MIN), 
+      max_heap_size(1000) /* in bytes */
 {
     frames.push_back(new Frame());
+    stack.reserve(100);
 }
 
 VMState::~VMState()
@@ -33,8 +38,6 @@ void VMState::HandleException(const Exception &except)
     frames[frame_level]->exception_occured = true;
     if (!can_handle_exceptions) {
         std::cout << "Unhandled exception: " << except.message << "\n";
-        //std::cout << "Heap dump:\n";
-        //heap.DumpHeap();
         std::cin.get();
         std::abort();
     }

@@ -2,6 +2,10 @@
 #include <windows.h>
 
 namespace ares {
+WindowsLibLoader::WindowsLibLoader()
+{
+}
+
 void *WindowsLibLoader::LoadLib(const std::wstring &filepath)
 {
     HINSTANCE lib = LoadLibrary(filepath.c_str());

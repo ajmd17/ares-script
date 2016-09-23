@@ -2,6 +2,8 @@
 #define ASCRIPT_H
 
 #include <loadlib.h>
+#include <detail/byte_stream.h>
+#include <common/util/timer.h>
 
 #include <string>
 #include <fstream>
@@ -35,16 +37,12 @@ namespace ares {
 */
 class Script {
 public:
-    Script(const std::string &code, const std::string &original_path, const std::string &output_file);
+    Script();
     ~Script();
 
-    bool Run();
-
-private:
-    std::string code;
-    std::string original_path;
-    std::string output_file;
+    bool CompileAndRun(const std::string &code, const std::string &original_path, const std::string &output_file);
+    void RunFromBytecode(avm::ByteStream *stream);
 };
-}
+} // namespace ares
 
 #endif

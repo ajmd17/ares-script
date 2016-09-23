@@ -3,7 +3,7 @@
 namespace avm {
 Frame::Frame()
     : last_cond(false),
-    exception_occured(false)
+      exception_occured(false)
 {
 }
 

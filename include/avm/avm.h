@@ -1,13 +1,6 @@
 #ifndef AVM_H
 #define AVM_H
 
-#include <string>
-#include <stack>
-#include <vector>
-#include <map>
-#include <utility>
-#include <memory>
-
 #include <common/instructions.h>
 #include <common/types.h>
 
@@ -18,6 +11,13 @@
 #include <detail/object.h>
 #include <detail/frame.h>
 #include <detail/heap.h>
+
+#include <string>
+#include <stack>
+#include <vector>
+#include <map>
+#include <utility>
+#include <memory>
 
 namespace avm {
 typedef Variable &(Variable::*BinOp_t)(VMState *, Variable *);
@@ -65,7 +65,7 @@ public:
     void SuggestGC();
 
     // Handle instructions
-    void HandleInstruction(OpCode_t opcode);
+    void HandleInstruction(Opcode_t opcode);
     // Execute instructions in the stream until the end is reached
     void Execute(ByteStream *);
 

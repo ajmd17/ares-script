@@ -1,0 +1,18 @@
+module Example;
+
+alias int = Convert.toInt;
+
+func Factorial(n) {
+  var result = 1;
+  for var i = 1; i <= n; i += 1 {
+    result *= i;
+  }
+  return result;
+}
+
+var num; // the user's chosen number
+// take user input
+print "Enter a number to calculate the factorial of: ";
+num = int(Console.readln());
+var fact = Factorial(num);
+print "The result was: ", fact, "\n";

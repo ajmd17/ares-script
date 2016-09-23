@@ -5,6 +5,7 @@
 #include <vector>
 #include <utility>
 #include <iostream>
+#include <memory>
 
 #include <detail/location.h>
 #include <detail/token.h>
@@ -13,6 +14,15 @@
 
 namespace avm {
 static const int compiler_global_level = 0;
+
+struct SymbolQueryResult {
+    bool found = false;
+    Symbol *symbol = nullptr;
+    int owner_level = 0;
+    int field_index = 0;
+
+    inline operator bool() const { return found; }
+};
 
 struct Symbol {
     // Pointer to ast node (declaration)
@@ -33,6 +43,50 @@ struct Symbol {
     bool is_native = false;
     // Number of parameters required, if it is a native function
     size_t nargs = 0;
+};
+
+class SymbolTable {
+public:
+    SymbolTable()
+    {
+    }
+
+    SymbolTable(SymbolTable &&other)
+        : keys(std::move(other.keys)),
+          values(std::move(other.values))
+    {
+    }
+
+    inline size_t Size() const { return keys.size(); }
+
+    inline void Insert(const std::string &key, std::unique_ptr<Symbol> &&value)
+    {
+        keys.push_back(key);
+        values.push_back(std::move(value));
+    }
+
+    inline std::string &KeyAt(size_t index) { return keys.at(index); }
+    inline const std::string &KeyAt(size_t index) const { return keys.at(index); }
+    inline std::unique_ptr<Symbol> &ValueAt(size_t index) { return values.at(index); }
+    inline const std::unique_ptr<Symbol> &ValueAt(size_t index) const { return values.at(index); }
+
+    inline std::unique_ptr<Symbol> &At(const std::string &key)
+    {
+        auto key_it = std::find(keys.begin(), keys.end(), key);
+        size_t key_index = key_it - keys.begin();
+        return values.at(key_index);
+    }
+
+    inline const std::unique_ptr<Symbol> &At(const std::string &key) const
+    {
+        auto key_it = std::find(keys.begin(), keys.end(), key);
+        size_t key_index = key_it - keys.begin();
+        return values.at(key_index);
+    }
+
+private:
+    std::vector<std::string> keys;
+    std::vector<std::unique_ptr<Symbol>> values;
 };
 
 struct Label {
@@ -67,20 +121,33 @@ struct CompilerState {
 
     struct LevelInfo {
         LevelType type;
+       /* SymbolTable locals;
+
+        LevelInfo()
+        {
+        }
+
+        LevelInfo(LevelInfo &&other)
+            : type(std::move(other.type)),
+              locals(std::move(other.locals))
+        {
+        }*/
+
         std::vector<std::pair<std::string, Symbol>> locals;
     };
 
     std::vector<BuildMessage> errors;
     std::map<AstNode*, size_t> use_counts;
     std::vector<AstFunctionCall*> native_function_calls;
-
+    // a map of other imported modules
     std::map<std::string, std::unique_ptr<AstModule>> other_modules;
 
     // the key is the label id
     std::map<int, LevelInfo> levels;
     int level, function_level;
     std::vector<Label> labels;
-    unsigned int block_id_counter;
+    // the counter for levels
+    unsigned int block_id_counter = 0;
 
     CompilerState();
     CompilerState(CompilerState &&other);

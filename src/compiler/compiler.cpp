@@ -250,7 +250,7 @@ void Compiler::Accept(AstExpression *node)
     Accept(node->child.get());
 
     if (node->should_clear_stack) {
-        bstream << Instruction<OpCode_t>(OpCode_pop);
+        bstream << Instruction<Opcode_t>(Opcode_pop);
     }
 }
 
@@ -264,84 +264,84 @@ void Compiler::Accept(AstBinaryOp *node)
             a > b will now be b < a */
         Accept(right.get());
         Accept(left.get());
-        bstream << Instruction<OpCode_t>(OpCode_less);
+        bstream << Instruction<Opcode_t>(Opcode_less);
     } else if (node->op == BinOp_greater_eql) {
         /* reverse placement of operands:
         a >= b will now be b <= a */
         Accept(right.get());
         Accept(left.get());
-        bstream << Instruction<OpCode_t>(OpCode_less_eql);
+        bstream << Instruction<Opcode_t>(Opcode_less_eql);
     } else {
         Accept(left.get());
         Accept(right.get());
 
         switch (node->op) {
         case BinOp_power:
-            bstream << Instruction<OpCode_t>(OpCode_pow);
+            bstream << Instruction<Opcode_t>(Opcode_pow);
             break;
         case BinOp_multiply:
-            bstream << Instruction<OpCode_t>(OpCode_mul);
+            bstream << Instruction<Opcode_t>(Opcode_mul);
             break;
         case BinOp_floor_divide:
         case BinOp_divide:
-            bstream << Instruction<OpCode_t>(OpCode_div);
+            bstream << Instruction<Opcode_t>(Opcode_div);
             break;
         case BinOp_modulus:
-            bstream << Instruction<OpCode_t>(OpCode_mod);
+            bstream << Instruction<Opcode_t>(Opcode_mod);
             break;
         case BinOp_add:
-            bstream << Instruction<OpCode_t>(OpCode_add);
+            bstream << Instruction<Opcode_t>(Opcode_add);
             break;
         case BinOp_subtract:
-            bstream << Instruction<OpCode_t>(OpCode_sub);
+            bstream << Instruction<Opcode_t>(Opcode_sub);
             break;
         case BinOp_logand:
-            bstream << Instruction<OpCode_t>(OpCode_and);
+            bstream << Instruction<Opcode_t>(Opcode_and);
             break;
         case BinOp_logor:
-            bstream << Instruction<OpCode_t>(OpCode_or);
+            bstream << Instruction<Opcode_t>(Opcode_or);
             break;
         case BinOp_equals:
-            bstream << Instruction<OpCode_t>(OpCode_eql);
+            bstream << Instruction<Opcode_t>(Opcode_eql);
             break;
         case BinOp_not_equal:
-            bstream << Instruction<OpCode_t>(OpCode_neql);
+            bstream << Instruction<Opcode_t>(Opcode_neql);
             break;
         case BinOp_less:
-            bstream << Instruction<OpCode_t>(OpCode_less);
+            bstream << Instruction<Opcode_t>(Opcode_less);
             break;
         case BinOp_less_eql:
-            bstream << Instruction<OpCode_t>(OpCode_less_eql);
+            bstream << Instruction<Opcode_t>(Opcode_less_eql);
             break;
         case BinOp_bitand:
-            bstream << Instruction<OpCode_t>(OpCode_bit_and);
+            bstream << Instruction<Opcode_t>(Opcode_bit_and);
             break;
         case BinOp_bitor:
-            bstream << Instruction<OpCode_t>(OpCode_bit_or);
+            bstream << Instruction<Opcode_t>(Opcode_bit_or);
             break;
         case BinOp_bitxor:
-            bstream << Instruction<OpCode_t>(OpCode_bit_xor);
+            bstream << Instruction<Opcode_t>(Opcode_bit_xor);
             break;
         case BinOp_bitshift_left:
-            bstream << Instruction<OpCode_t>(OpCode_left_shift);
+            bstream << Instruction<Opcode_t>(Opcode_left_shift);
             break;
         case BinOp_bitshift_right:
-            bstream << Instruction<OpCode_t>(OpCode_right_shift);
+            bstream << Instruction<Opcode_t>(Opcode_right_shift);
             break;
         case BinOp_assign:
-            bstream << Instruction<OpCode_t>(OpCode_assign);
+            bstream << Instruction<Opcode_t>(Opcode_assign);
             break;
         case BinOp_add_assign:
-            bstream << Instruction<OpCode_t>(OpCode_add_assign);
+            bstream << Instruction<Opcode_t>(Opcode_add_assign);
             break;
         case BinOp_subtract_assign:
-            bstream << Instruction<OpCode_t>(OpCode_sub_assign);
+            bstream << Instruction<Opcode_t>(Opcode_sub_assign);
             break;
         case BinOp_multiply_assign:
-            bstream << Instruction<OpCode_t>(OpCode_mul_assign);
+            bstream << Instruction<Opcode_t>(Opcode_mul_assign);
             break;
         case BinOp_divide_assign:
-            bstream << Instruction<OpCode_t>(OpCode_div_assign);
+            bstream << Instruction<Opcode_t>(Opcode_div_assign);
             break;
         }
     }
@@ -353,10 +353,10 @@ void Compiler::Accept(AstUnaryOp *node)
 
     switch (node->op) {
     case UnOp_lognot:
-        bstream << Instruction<OpCode_t>(OpCode_unary_not);
+        bstream << Instruction<Opcode_t>(Opcode_unary_not);
         break;
     case UnOp_negative:
-        bstream << Instruction<OpCode_t>(OpCode_unary_minus);
+        bstream << Instruction<Opcode_t>(Opcode_unary_minus);
         break;
     }
 }
@@ -368,7 +368,7 @@ void Compiler::Accept(AstArrayAccess *node)
     // push the instruction
     Accept(node->object.get());
     Accept(node->index.get());
-    bstream << Instruction<OpCode_t>(OpCode_array_index);
+    bstream << Instruction<Opcode_t>(Opcode_array_index);
 }
 
 void Compiler::Accept(AstMemberAccess *node)
@@ -385,10 +385,10 @@ void Compiler::Accept(AstMemberAccess *node)
         if (node->right->type == ast_type_member_access) {
             Accept(node->right.get());
             auto right_ast = static_cast<AstMemberAccess*>(node->right.get());
-            bstream << Instruction<OpCode_t, int32_t, const char *>(OpCode_load_member, right_ast->left_str.length() + 1, right_ast->left_str.c_str());
+            bstream << Instruction<Opcode_t, int32_t, const char *>(Opcode_load_member, right_ast->left_str.length() + 1, right_ast->left_str.c_str());
         } else if (node->right->type == ast_type_variable) {
             auto right_ast = static_cast<AstVariable*>(node->right.get());
-            bstream << Instruction<OpCode_t, int32_t, const char *>(OpCode_load_member, right_ast->name.length() + 1, right_ast->name.c_str());
+            bstream << Instruction<Opcode_t, int32_t, const char *>(Opcode_load_member, right_ast->name.length() + 1, right_ast->name.c_str());
         } else if (node->right->type == ast_type_function_call) {
             // accept member function call
             auto right_ast = static_cast<AstFunctionCall*>(node->right.get());
@@ -397,8 +397,8 @@ void Compiler::Accept(AstMemberAccess *node)
                 Accept(param.get());
             }
 
-            bstream << Instruction<OpCode_t, int32_t, const char *>(OpCode_load_member, right_ast->name.length() + 1, right_ast->name.c_str());
-            bstream << Instruction<OpCode_t, int32_t>(OpCode_invoke_object, right_ast->arguments.size());
+            bstream << Instruction<Opcode_t, int32_t, const char *>(Opcode_load_member, right_ast->name.length() + 1, right_ast->name.c_str());
+            bstream << Instruction<Opcode_t, int32_t>(Opcode_invoke_object, right_ast->arguments.size());
         }
     }
 }
@@ -419,10 +419,10 @@ void Compiler::Accept(AstVariableDeclaration *node)
     Accept(node->assignment.get()); // may have side effects, so accept anyway
     if ((config::optimize_remove_unused && UseCount(node) != 0) || !config::optimize_remove_unused) {
         std::string var_name(state.MakeVariableName(node->name, node->module));
-        bstream << Instruction<OpCode_t, int32_t, const char*>(OpCode_store_as_local, var_name.length() + 1, var_name.c_str());
+        bstream << Instruction<Opcode_t, int32_t, const char*>(Opcode_store_as_local, var_name.length() + 1, var_name.c_str());
     } else {
         // must pop the result of the assignment from the stack
-        bstream << Instruction<OpCode_t>(OpCode_pop);
+        bstream << Instruction<Opcode_t>(Opcode_pop);
     }
 }
 
@@ -441,11 +441,15 @@ void Compiler::Accept(AstVariable *node)
     if (node->is_alias) {
         Accept(node->alias_to);
     } else {
-        if (config::optimize_constant_folding && node->is_const && node->is_literal && node->current_value != nullptr) {
+        if (config::optimize_constant_folding && 
+            node->is_const && 
+            node->is_literal && 
+            node->current_value != nullptr) {
+            // accept the pure values of constant literals
             Accept(node->current_value);
         } else {
             std::string var_name(state.MakeVariableName(node->name, node->module));
-            bstream << Instruction<OpCode_t, int32_t, const char*>(OpCode_load_local,
+            bstream << Instruction<Opcode_t, int32_t, const char*>(Opcode_load_local,
                 var_name.length() + 1, var_name.c_str());
         }
     }
@@ -453,33 +457,33 @@ void Compiler::Accept(AstVariable *node)
 
 void Compiler::Accept(AstInteger *node)
 {
-    bstream << Instruction<OpCode_t, AVMInteger_t>(OpCode_load_integer, node->value);
+    bstream << Instruction<Opcode_t, AVMInteger_t>(Opcode_load_integer, node->value);
 }
 
 void Compiler::Accept(AstFloat *node)
 {
-    bstream << Instruction<OpCode_t, AVMFloat_t>(OpCode_load_float, node->value);
+    bstream << Instruction<Opcode_t, AVMFloat_t>(Opcode_load_float, node->value);
 }
 
 void Compiler::Accept(AstString *node)
 {
-    bstream << Instruction<OpCode_t, int32_t, const char*>(OpCode_load_string,
+    bstream << Instruction<Opcode_t, int32_t, const char*>(Opcode_load_string,
         node->value.length() + 1, node->value.c_str());
 }
 
 void Compiler::Accept(AstTrue *node)
 {
-    bstream << Instruction<OpCode_t, AVMInteger_t>(OpCode_load_integer, 1);
+    bstream << Instruction<Opcode_t, AVMInteger_t>(Opcode_load_integer, 1);
 }
 
 void Compiler::Accept(AstFalse *node)
 {
-    bstream << Instruction<OpCode_t, AVMInteger_t>(OpCode_load_integer, 0);
+    bstream << Instruction<Opcode_t, AVMInteger_t>(Opcode_load_integer, 0);
 }
 
 void Compiler::Accept(AstNull *node)
 {
-    bstream << Instruction<OpCode_t>(OpCode_load_null);
+    bstream << Instruction<Opcode_t>(Opcode_load_null);
 }
 
 void Compiler::Accept(AstSelf *node)
@@ -497,11 +501,25 @@ void Compiler::Accept(AstFunctionDefinition *node)
             bool is_global_function = state.function_level == 0;
             ++state.function_level;
 
+            // the ID for the function block
+            unsigned int id = ++state.block_id_counter;
+            // the ID for the label to skip past the function
+            unsigned int after_id = ++state.block_id_counter;
+
             std::string var_name(state.MakeVariableName(node->name, node->module));
 
-            bstream << Instruction<OpCode_t, uint8_t, uint32_t, uint8_t>(OpCode_new_function,
-                static_cast<uint8_t>(is_global_function), node->arguments.size(), 0/*No variadic support yet*/);
-            bstream << Instruction<OpCode_t, int32_t, const char*>(OpCode_store_as_local, var_name.length() + 1, var_name.c_str());
+            bstream << Instruction<Opcode_t, uint32_t, uint8_t, uint32_t>(Opcode_new_function,
+                node->arguments.size(), 0/*No variadic support yet*/, id);
+            bstream << Instruction<Opcode_t, int32_t, const char*>(Opcode_store_as_local, var_name.length() + 1, var_name.c_str());
+
+            // add the label for the function so that we can jump to it
+            Label function_label;
+            function_label.id = id;
+            function_label.location = bstream.GetPosition();
+            state.labels.push_back(function_label);
+
+            // jump to after the function so it isn't executed
+            bstream << Instruction<Opcode_t, int32_t>(Opcode_jump, after_id);
 
             auto *body = dynamic_cast<AstBlock*>(node->block.get());
             if (body) {
@@ -510,7 +528,7 @@ void Compiler::Accept(AstFunctionDefinition *node)
                 // create params as local variables
                 for (auto it = node->arguments.rbegin(); it != node->arguments.rend(); ++it) {
                     std::string arg_name = state.MakeVariableName(*it, node->module);
-                    bstream << Instruction<OpCode_t, int32_t, const char*>(OpCode_store_as_local, arg_name.length() + 1, arg_name.c_str());
+                    bstream << Instruction<Opcode_t, int32_t, const char*>(Opcode_store_as_local, arg_name.length() + 1, arg_name.c_str());
                 }
 
                 Accept(body);
@@ -518,8 +536,14 @@ void Compiler::Accept(AstFunctionDefinition *node)
 
                 // Return instruction is placed after the block is decreased,
                 // so that the function will finish execution of the block before ending.
-                bstream << Instruction<OpCode_t>(OpCode_return);
+                bstream << Instruction<Opcode_t>(Opcode_return);
             }
+
+            // add the label for the end of the function so we can continue without calling the function
+            Label after_function;
+            after_function.id = after_id;
+            after_function.location = bstream.GetPosition();
+            state.labels.push_back(after_function);
 
             --state.function_level;
         }
@@ -528,8 +552,22 @@ void Compiler::Accept(AstFunctionDefinition *node)
 
 void Compiler::Accept(AstFunctionExpression *node)
 {
-    bstream << Instruction<OpCode_t, uint8_t, uint32_t, uint8_t>(OpCode_new_function, 0,
-        node->arguments.size(), 0/*No variadic support yet*/);
+    // the ID for the function block
+    unsigned int id = ++state.block_id_counter;
+    // the ID for the label to skip past the function
+    unsigned int after_id = ++state.block_id_counter;
+
+    bstream << Instruction<Opcode_t, uint32_t, uint8_t, uint32_t>(Opcode_new_function,
+        node->arguments.size(), 0/*No variadic support yet*/, id);
+
+    // add the label for the function so that we can jump to it
+    Label function_label;
+    function_label.id = id;
+    function_label.location = bstream.GetPosition();
+    state.labels.push_back(function_label);
+
+    // jump to after the function so it isn't executed
+    bstream << Instruction<Opcode_t, int32_t>(Opcode_jump, after_id);
 
     auto *body = dynamic_cast<AstBlock*>(node->block.get());
     if (body) {
@@ -538,7 +576,7 @@ void Compiler::Accept(AstFunctionExpression *node)
         // create params as local variables
         for (auto it = node->arguments.rbegin(); it != node->arguments.rend(); ++it) {
             std::string var_name = state.MakeVariableName(*it, node->module);
-            bstream << Instruction<OpCode_t, int32_t, const char*>(OpCode_store_as_local,
+            bstream << Instruction<Opcode_t, int32_t, const char*>(Opcode_store_as_local,
                 var_name.length() + 1, var_name.c_str());
         }
 
@@ -547,8 +585,14 @@ void Compiler::Accept(AstFunctionExpression *node)
 
         // Return instruction is placed after the block is decreased,
         // so that the function will finish execution of the block before ending.
-        bstream << Instruction<OpCode_t>(OpCode_return);
+        bstream << Instruction<Opcode_t>(Opcode_return);
     }
+
+    // add the label for the end of the function so we can continue without calling the function
+    Label after_function;
+    after_function.id = after_id;
+    after_function.location = bstream.GetPosition();
+    state.labels.push_back(after_function);
 }
 
 void Compiler::Accept(AstFunctionCall *node)
@@ -568,13 +612,13 @@ void Compiler::Accept(AstFunctionCall *node)
             if (def != nullptr) {
                 if (def->HasAttribute("inline")) {
                     ++state.function_level;
-                    bstream << Instruction<OpCode_t>(OpCode_irl);
+                    bstream << Instruction<Opcode_t>(Opcode_irl);
                     IncreaseBlock(LevelType::Level_function);
 
                     // create params as local variables
                     for (auto it = def->arguments.rbegin(); it != def->arguments.rend(); ++it) {
                         std::string arg_name = state.MakeVariableName(*it, def->module);
-                        bstream << Instruction<OpCode_t, int32_t, const char*>(OpCode_store_as_local,
+                        bstream << Instruction<Opcode_t, int32_t, const char*>(Opcode_store_as_local,
                             arg_name.length() + 1, arg_name.c_str());
                     }
 
@@ -588,12 +632,12 @@ void Compiler::Accept(AstFunctionCall *node)
 
         if (!inlined) {
             std::string var_name = state.MakeVariableName(node->name, node->module);
-            bstream << Instruction<OpCode_t, int32_t, const char*>(OpCode_load_local,
+            bstream << Instruction<Opcode_t, int32_t, const char*>(Opcode_load_local,
                 var_name.length() + 1, var_name.c_str());
         }
     }
 
-    bstream << Instruction<OpCode_t, int32_t>(OpCode_invoke_object, node->arguments.size());
+    bstream << Instruction<Opcode_t, int32_t>(Opcode_invoke_object, node->arguments.size());
 }
 
 void Compiler::Accept(AstClass *node)
@@ -602,12 +646,12 @@ void Compiler::Accept(AstClass *node)
 
 void Compiler::Accept(AstObjectExpression *node)
 {
-    bstream << Instruction<OpCode_t>(OpCode_new_structure);
+    bstream << Instruction<Opcode_t>(Opcode_new_structure);
     for (auto &&mem : node->members) {
-        bstream << Instruction<OpCode_t, int32_t, const char*>(OpCode_new_member, mem.first.length() + 1, mem.first.c_str());
+        bstream << Instruction<Opcode_t, int32_t, const char*>(Opcode_new_member, mem.first.length() + 1, mem.first.c_str());
         Accept(mem.second.get());
-        bstream << Instruction<OpCode_t>(OpCode_assign);
-        bstream << Instruction<OpCode_t>(OpCode_pop);
+        bstream << Instruction<Opcode_t>(Opcode_assign);
+        bstream << Instruction<Opcode_t>(Opcode_pop);
     }
     // the structure remains on the stack
 }
@@ -622,10 +666,10 @@ void Compiler::Accept(AstIfStmt *node)
 
     Accept(node->conditional.get());
     // if result is false, then skip to where the else statement is
-    bstream << Instruction<OpCode_t, uint32_t>(OpCode_jump_if_false, after_if_id);
+    bstream << Instruction<Opcode_t, uint32_t>(Opcode_jump_if_false, after_if_id);
 
     // temporary:
-    bstream << Instruction<OpCode_t>(OpCode_irl);
+    bstream << Instruction<Opcode_t>(Opcode_irl);
 
     IncreaseBlock(LevelType::Level_condition);
     Accept(node->block.get());
@@ -639,10 +683,10 @@ void Compiler::Accept(AstIfStmt *node)
     if (node->else_statement) {
         unsigned int after_else_id = ++state.block_id_counter;
         // if the if result was true, skip to after the else statement
-        bstream << Instruction<OpCode_t, uint32_t>(OpCode_jump_if_true, after_else_id);
+        bstream << Instruction<Opcode_t, uint32_t>(Opcode_jump_if_true, after_else_id);
 
         // temporary:
-        bstream << Instruction<OpCode_t>(OpCode_irl);
+        bstream << Instruction<Opcode_t>(Opcode_irl);
 
         IncreaseBlock(LevelType::Level_condition);
         Accept(node->else_statement.get());
@@ -655,7 +699,7 @@ void Compiler::Accept(AstIfStmt *node)
     }
 
     // finally, pop the conditional from the stack:
-    bstream << Instruction<OpCode_t>(OpCode_pop);
+    bstream << Instruction<Opcode_t>(Opcode_pop);
 }
 
 void Compiler::Accept(AstPrintStmt *node)
@@ -664,7 +708,7 @@ void Compiler::Accept(AstPrintStmt *node)
     for (auto it = node->arguments.rbegin(); it != node->arguments.rend(); ++it) {
         Accept(it->get());
     }
-    bstream << Instruction<OpCode_t, uint32_t>(OpCode_print, node->arguments.size());
+    bstream << Instruction<Opcode_t, uint32_t>(Opcode_print, node->arguments.size());
 }
 
 void Compiler::Accept(AstReturnStmt *node)
@@ -679,12 +723,12 @@ void Compiler::Accept(AstReturnStmt *node)
         ++counter;
         level = &state.levels[--start];
     }
-    bstream << Instruction<OpCode_t, uint8_t>(OpCode_drl, counter);
+    bstream << Instruction<Opcode_t, uint8_t>(Opcode_drl, counter);
 }
 
 void Compiler::Accept(AstForLoop *node)
 {
-    /* bstream << Instruction<OpCode_t>(OpCode_irl);
+    /* bstream << Instruction<Opcode_t>(Opcode_irl);
      IncreaseBlock(LevelType::Level_default);
 
      auto id = ++state.block_id_counter;
@@ -696,25 +740,25 @@ void Compiler::Accept(AstForLoop *node)
          bool pos = diff >= 0;
 
          std::string var_name = state.MakeVariableName(node->identifier, node->module);
-         bstream << Instruction<OpCode_t, int32_t, const char*>(OpCode_load_local,
+         bstream << Instruction<Opcode_t, int32_t, const char*>(Opcode_load_local,
              var_name.length() + 1, var_name.c_str());
 
-         bstream << Instruction<OpCode_t, AVMInteger_t>(OpCode_load_integer, first);
-         bstream << Instruction<OpCode_t>(OpCode_assign);
+         bstream << Instruction<Opcode_t, AVMInteger_t>(Opcode_load_integer, first);
+         bstream << Instruction<Opcode_t>(Opcode_assign);
 
-         bstream << Instruction<OpCode_t, AVMInteger_t>(OpCode_load_integer, second);
-         bstream << Instruction<OpCode_t>(OpCode_neql);
-         bstream << Instruction<OpCode_t>(OpCode_irl_if_true);
+         bstream << Instruction<Opcode_t, AVMInteger_t>(Opcode_load_integer, second);
+         bstream << Instruction<Opcode_t>(Opcode_neql);
+         bstream << Instruction<Opcode_t>(Opcode_irl_if_true);
 
          IncreaseBlock(LevelType::Level_loop);
          Accept(node->block.get());
          DecreaseBlock();
 
-         bstream << Instruction<OpCode_t, AVMInteger_t>(OpCode_load_integer, first);
-         bstream << Instruction<OpCode_t, AVMInteger_t>(OpCode_add, pos ? 1 : -1);
+         bstream << Instruction<Opcode_t, AVMInteger_t>(Opcode_load_integer, first);
+         bstream << Instruction<Opcode_t, AVMInteger_t>(Opcode_add, pos ? 1 : -1);
      }
 
-     bstream << Instruction<OpCode_t, uint32_t>(OpCode_jump_if_true, id);
+     bstream << Instruction<Opcode_t, uint32_t>(Opcode_jump_if_true, id);
      DecreaseBlock();*/
     bool empty_body = true;
     if (node->block != nullptr) {
@@ -729,7 +773,7 @@ void Compiler::Accept(AstForLoop *node)
         auto bottom_loop_id = ++state.block_id_counter;
 
         // begin initializer block
-        bstream << Instruction<OpCode_t>(OpCode_irl);
+        bstream << Instruction<Opcode_t>(Opcode_irl);
         IncreaseBlock(LevelType::Level_default);
 
         Accept(node->initializer.get());
@@ -742,22 +786,22 @@ void Compiler::Accept(AstForLoop *node)
 
         Accept(node->conditional.get());
         // skip the loop if the condition is false
-        bstream << Instruction<OpCode_t, uint32_t>(OpCode_jump_if_false, bottom_loop_id);
+        bstream << Instruction<Opcode_t, uint32_t>(Opcode_jump_if_false, bottom_loop_id);
 
-        bstream << Instruction<OpCode_t>(OpCode_irl);
+        bstream << Instruction<Opcode_t>(Opcode_irl);
         IncreaseBlock(LevelType::Level_loop);
         Accept(node->block.get());
         DecreaseBlock();
         Accept(node->afterthought.get());
 
         // pop the afterthought from the stack:
-        bstream << Instruction<OpCode_t>(OpCode_pop);
+        bstream << Instruction<Opcode_t>(Opcode_pop);
 
         // pop the conditional from the stack:
-        bstream << Instruction<OpCode_t>(OpCode_pop);
+        bstream << Instruction<Opcode_t>(Opcode_pop);
 
         // jump to top of loop
-        bstream << Instruction<OpCode_t, uint32_t>(OpCode_jump, top_loop_id);
+        bstream << Instruction<Opcode_t, uint32_t>(Opcode_jump, top_loop_id);
 
         Label bottom_loop_label;
         bottom_loop_label.id = bottom_loop_id;
@@ -765,7 +809,7 @@ void Compiler::Accept(AstForLoop *node)
         state.labels.push_back(bottom_loop_label);
 
         // pop the final conditional value from the stack
-        bstream << Instruction<OpCode_t>(OpCode_pop);
+        bstream << Instruction<Opcode_t>(Opcode_pop);
 
         // end of initializer block
         DecreaseBlock();
@@ -795,20 +839,20 @@ void Compiler::Accept(AstWhileLoop *node)
         Accept(node->conditional.get());
 
         // skip the loop if the condition is false
-        bstream << Instruction<OpCode_t, uint32_t>(OpCode_jump_if_false, bottom_loop_id);
+        bstream << Instruction<Opcode_t, uint32_t>(Opcode_jump_if_false, bottom_loop_id);
 
         // temporary:
-        bstream << Instruction<OpCode_t>(OpCode_irl);
+        bstream << Instruction<Opcode_t>(Opcode_irl);
 
         IncreaseBlock(LevelType::Level_loop);
         Accept(node->block.get());
         DecreaseBlock();
 
         // pop the conditional from the stack:
-        bstream << Instruction<OpCode_t>(OpCode_pop);
+        bstream << Instruction<Opcode_t>(Opcode_pop);
 
         // jump to top of loop
-        bstream << Instruction<OpCode_t, uint32_t>(OpCode_jump, top_loop_id);
+        bstream << Instruction<Opcode_t, uint32_t>(Opcode_jump, top_loop_id);
 
         Label bottom_loop_label;
         bottom_loop_label.id = bottom_loop_id;
@@ -816,7 +860,7 @@ void Compiler::Accept(AstWhileLoop *node)
         state.labels.push_back(bottom_loop_label);
 
         // pop the final conditional value from the stack
-        bstream << Instruction<OpCode_t>(OpCode_pop);
+        bstream << Instruction<Opcode_t>(Opcode_pop);
     }
 }
 
@@ -832,7 +876,7 @@ void Compiler::Accept(AstTryCatch *node)
     }
 
     if ((config::optimize_remove_dead_code && !empty_try_body) || !config::optimize_remove_dead_code) {
-        bstream << Instruction<OpCode_t>(OpCode_try_catch_block);
+        bstream << Instruction<Opcode_t>(Opcode_try_catch_block);
 
         IncreaseBlock(LevelType::Level_default);
         Accept(node->try_block.get());
@@ -863,13 +907,13 @@ void Compiler::IncreaseBlock(LevelType type)
     LevelInfo level;
     level.type = type;
     state.levels[++state.level] = level;
-    bstream << Instruction<OpCode_t>(OpCode_ifl);
+    bstream << Instruction<Opcode_t>(Opcode_ifl);
 }
 
 void Compiler::DecreaseBlock()
 {
     state.levels[state.level--] = LevelInfo();
-    bstream << Instruction<OpCode_t>(OpCode_dfl);
+    bstream << Instruction<Opcode_t>(Opcode_dfl);
 }
 
 void Compiler::OptimizeAstNode(std::unique_ptr<AstNode> &node)

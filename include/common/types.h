@@ -5,11 +5,11 @@
 #include <cstdint>
 
 namespace avm {
-typedef int64_t AVMInteger_t;
+typedef int32_t AVMInteger_t;
 typedef double AVMFloat_t;
-typedef uint64_t auint;
 typedef char achar;
 typedef std::basic_string<achar> AVMString_t;
+typedef uint8_t Opcode_t;
 }
 
 #endif

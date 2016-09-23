@@ -1,15 +1,21 @@
 #include <detail/heap.h>
-#include <iostream>
 
 namespace avm {
 Heap::Heap()
     : head(nullptr),
-    num_objects(0)
+      num_objects(0)
 {
 }
 
 Heap::~Heap()
 {
+    // clean up all objects
+    HeapObject *last = head;
+    while (last != nullptr) {
+        HeapObject *tmp = last;
+        last = last->before;
+        delete tmp;
+    }
 }
 
 ObjectPtr *Heap::AllocNull()
@@ -61,20 +67,19 @@ void Heap::Sweep()
     }
 }
 
-void Heap::DumpHeap() const
+void Heap::DumpHeap(std::ostream &os) const
 {
     HeapObject *temp_head = head;
     while (temp_head != nullptr) {
-        std::cout <<
-            "#" << temp_head->id <<
-            "\t" << temp_head->obj;
+        os << "#" << temp_head->id
+           << "\t" << temp_head->obj;
 
         if (temp_head->obj != nullptr) {
-            std::cout <<
-                "\t" << temp_head->obj->flags <<
-                "\t" << temp_head->obj->ToString();
+            os << "\t" 
+               << temp_head->obj->flags 
+               << "\t" << temp_head->obj->ToString();
         }
-        std::cout << "\n";
+        os << "\n";
 
         temp_head = temp_head->before;
     }

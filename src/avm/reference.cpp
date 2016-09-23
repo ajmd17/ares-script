@@ -7,29 +7,14 @@ Reference::Reference()
 {
 }
 
-Reference::Reference(Object *&ref)
-    : ref(&ref)
-{
-}
-
 Reference::Reference(const Reference &other)
     : ref(other.ref)
 {
 }
 
-Object **Reference::Ptr() const
+Reference::Reference(Object *&ref)
+    : ref(&ref)
 {
-    return ref;
-}
-
-Object *&Reference::Ref()
-{
-    return *ref;
-}
-
-const Object *const &Reference::Ref() const
-{
-    return *ref;
 }
 
 void Reference::DeleteObject()

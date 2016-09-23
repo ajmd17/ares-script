@@ -1,10 +1,6 @@
 #include <ascript.h>
 #include <rtlib.h>
 
-#if WIN32
-#include <platform/loadlib_windows.h>
-#endif
-
 #include <compiler/parser.h>
 #include <compiler/lexer.h>
 #include <compiler/compiler.h>
@@ -12,21 +8,16 @@
 #include <avm/avm.h>
 #include <avm/detail/native_function.h>
 
-#include <common/util/timer.h>
-
 #include <fstream>
 #include <iostream>
 
 using namespace avm;
+
 namespace ares {
 static Timer global_timer = Timer();
 
-Script::Script(const std::string &code, const std::string &original_path, const std::string &output_file)
-    : code(code), original_path(original_path), output_file(output_file)
+Script::Script()
 {
-#if WIN32
-    RuntimeLib::libloader = new WindowsLibLoader();
-#endif
 }
 
 Script::~Script()
@@ -58,7 +49,8 @@ void Toc(VMState *state, Object **args, uint32_t argc)
 }
 
 /** \todo Make this check if the bytecode has already been generated, instead of re-compiling every time */
-bool Script::Run()
+bool Script::CompileAndRun(const std::string &code, 
+    const std::string &original_path, const std::string &output_file)
 {
     using namespace avm;
 
@@ -98,7 +90,9 @@ bool Script::Run()
 
         if (compiler.Compile(unit.get())) {
             BytecodeGenerator gen(compiler.GetInstructions(), compiler.GetState().labels);
-            ByteStream *stream = nullptr;
+            
+            char *buffer = nullptr;
+            size_t max_pos = 0;
 
             std::ofstream file(output_file, std::ios::binary);
             if (!output_file.empty() && file.is_open()) {
@@ -106,47 +100,30 @@ bool Script::Run()
                 gen.Emit(file);
                 file.close();
 
-                stream = new FileByteStream(output_file);
+                std::ifstream is(output_file, std::ios::binary | std::ios::ate);
+
+                max_pos = is.tellg();
+                is.seekg(0);
+                buffer = new char[max_pos];
+
+                std::stringstream ss;
+                ss << is.rdbuf();
+                std::memcpy(buffer, ss.str().c_str(), max_pos);
+
             } else {
                 // file did not open, so run from memory
                 std::stringstream ss;
                 gen.Emit(ss);
 
-                stream = new MemoryByteStream(ss);
+                max_pos = ss.tellp();
+                buffer = new char[max_pos];
+                std::memcpy(buffer, ss.str().c_str(), max_pos);
             }
 
-            VMInstance *vm = new VMInstance();
-
-            vm->BindFunction("FileIO_open", RuntimeLib::FileIO_open);
-            vm->BindFunction("FileIO_write", RuntimeLib::FileIO_write);
-            vm->BindFunction("FileIO_read", RuntimeLib::FileIO_read);
-            vm->BindFunction("FileIO_close", RuntimeLib::FileIO_close);
-
-            vm->BindFunction("Runtime_loadlib", RuntimeLib::Runtime_loadlib);
-            vm->BindFunction("Runtime_loadfunc", RuntimeLib::Runtime_loadfunc);
-            vm->BindFunction("Runtime_invoke", RuntimeLib::Runtime_invoke);
-
-            vm->BindFunction("Clock_start", Tic);
-            vm->BindFunction("Clock_stop", Toc);
-
-            vm->BindFunction("Console_println", RuntimeLib::Console_println);
-            //vm->BindFunction("Console_printf", RuntimeLib::Console_printf);
-            vm->BindFunction("Console_readln", RuntimeLib::Console_readln);
-            vm->BindFunction("Console_system", RuntimeLib::Console_system);
-
-            vm->BindFunction("Reflection_typeof", RuntimeLib::Reflection_typeof);
-
-            vm->BindFunction("Convert_toString", RuntimeLib::Convert_toString);
-            vm->BindFunction("Convert_toInt", RuntimeLib::Convert_toInt);
-            vm->BindFunction("Convert_toFloat", RuntimeLib::Convert_toFloat);
-            vm->BindFunction("Convert_toBool", RuntimeLib::Convert_toBool);
-
-            vm->Execute(stream);
-
-            delete vm;
+            ByteStream *stream = new ByteStream(buffer, max_pos);
+            RunFromBytecode(stream);
             delete stream;
-
-            std::system("pause");
+            delete[] buffer;
 
             return true;
         } else {
@@ -157,5 +134,38 @@ bool Script::Run()
     }
 
     return false;
+}
+
+void Script::RunFromBytecode(avm::ByteStream *stream)
+{
+    VMInstance *vm = new VMInstance();
+
+    vm->BindFunction("FileIO_open", RuntimeLib::FileIO_open);
+    vm->BindFunction("FileIO_write", RuntimeLib::FileIO_write);
+    vm->BindFunction("FileIO_read", RuntimeLib::FileIO_read);
+    vm->BindFunction("FileIO_close", RuntimeLib::FileIO_close);
+
+    vm->BindFunction("Runtime_loadlib", RuntimeLib::Runtime_loadlib);
+    vm->BindFunction("Runtime_loadfunc", RuntimeLib::Runtime_loadfunc);
+    vm->BindFunction("Runtime_invoke", RuntimeLib::Runtime_invoke);
+
+    vm->BindFunction("Clock_start", Tic);
+    vm->BindFunction("Clock_stop", Toc);
+
+    vm->BindFunction("Console_println", RuntimeLib::Console_println);
+    //vm->BindFunction("Console_printf", RuntimeLib::Console_printf);
+    vm->BindFunction("Console_readln", RuntimeLib::Console_readln);
+    vm->BindFunction("Console_system", RuntimeLib::Console_system);
+
+    vm->BindFunction("Reflection_typeof", RuntimeLib::Reflection_typeof);
+
+    vm->BindFunction("Convert_toString", RuntimeLib::Convert_toString);
+    vm->BindFunction("Convert_toInt", RuntimeLib::Convert_toInt);
+    vm->BindFunction("Convert_toFloat", RuntimeLib::Convert_toFloat);
+    vm->BindFunction("Convert_toBool", RuntimeLib::Convert_toBool);
+
+    vm->Execute(stream);
+
+    delete vm;
 }
 } // namespace avm

@@ -2,9 +2,14 @@ module ForLoop
 
 Clock.start()
 
-for i: 0, 25 {
-  print i, '\n'
+var counter = 0;
+while counter < 150000 {
+  print counter, '\n';
+  counter += 1;
 }
+
+/*for i: 0, 150 {
+  print i, '\n'
+}*/
 // back to old style comments! yay!!!
 print "Elapsed time: ", Clock.stop(), "ms\n"
-Console.readln()

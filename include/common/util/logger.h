@@ -3,18 +3,14 @@
 
 #include <cstdio>
 
-#define DEBUG_PRINT 0
+#define DEBUG_PRINT_ENABLED 0
 
 namespace avm {
-
-template <typename...Args>
-inline void DebugLog(const char *format, Args &&... args) {
-#if DEBUG_PRINT
-  printf(format, args...);
-  printf("\n");
+#if DEBUG_PRINT_ENABLED
+#define DEBUG_LOG(str, ...) printf("0x%08x: " str "\n", (int)state->stream->Position(), __VA_ARGS__)
+#else
+#define DEBUG_LOG (void)0;
 #endif
-}
-
 } // namespace avm
 
 #endif

@@ -1,13 +1,6 @@
 #ifndef VM_STATE_H
 #define VM_STATE_H
 
-#include <string>
-#include <stack>
-#include <vector>
-#include <map>
-#include <utility>
-#include <memory>
-
 #include <detail/frame.h>
 #include <detail/heap.h>
 #include <detail/byte_stream.h>
@@ -16,9 +9,16 @@
 #include <detail/reference.h>
 #include <detail/variable.h>
 
-#define GC_THRESHOLD_MIN 500 // start # of objects before GC.
+#include <string>
+#include <stack>
+#include <vector>
+#include <map>
+#include <utility>
+#include <memory>
+
+#define GC_THRESHOLD_MIN 200 // start # of objects before GC.
 #define GC_THRESHOLD_MAX 2000 // max out at this number, do not increase threshold
-#define GC_THRESHOLD_STEP 100 // how much to increase each time GC runs.
+#define GC_THRESHOLD_STEP 50 // how much to increase each time GC runs.
 
 namespace avm {
 class VMInstance;
@@ -34,9 +34,9 @@ public:
     // The current read level
     int read_level;
     // Saved positions from jumping
-    std::stack<unsigned long> jump_positions;
+    std::stack<uint64_t> jump_positions;
     // Saved block locations, mapped by block ID
-    std::map<int, unsigned long> block_positions;
+    std::map<uint32_t, uint64_t> block_positions;
     // The stream that instructions are being read from
     ByteStream *stream;
     // Current number of objects
@@ -47,15 +47,11 @@ public:
     std::vector<Frame*> frames;
     // Are we currently able to handle exceptions, or just crash?
     bool can_handle_exceptions;
-    // the stack pointer (temporary value index)
-    //size_t sp = 0;
-    // Holds temporary values
-   // Variable temporaries[200];
     // Holds the heap memory
     Heap heap;
     // Maximum heap memory before the GC is called
     size_t max_heap_size;
-    // Pointer to the VM
+    // Pointer to the VM instance
     VMInstance *vm;
 
     std::vector<Reference> stack;

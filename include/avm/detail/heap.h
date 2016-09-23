@@ -3,6 +3,8 @@
 
 #include <detail/object.h>
 
+#include <ostream>
+
 namespace avm {
 class Heap {
 public:
@@ -29,7 +31,7 @@ public:
     }
 
     void Sweep();
-    void DumpHeap() const;
+    void DumpHeap(std::ostream &os) const;
     uint32_t NumObjects() const;
 
 private:

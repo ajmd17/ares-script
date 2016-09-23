@@ -312,6 +312,11 @@ struct AstVariable : public AstNode {
     bool is_literal = false;
     AstNode *current_value = nullptr;
     Symbol *symbol_ptr = nullptr;
+    // Info for compilation
+    // the block which this variable belongs to
+    int owner_level = 0;
+    // the index of this variable
+    int field_index = 0;
     /* ========================================== */
 
     AstVariable(SourceLocation location, AstNode *module, const AVMString_t &name)

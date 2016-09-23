@@ -21,18 +21,18 @@ bool BytecodeGenerator::Emit(std::ostream &filestream)
 
     uint64_t label_offset = (uint64_t)filestream.tellp();
     for (Label &label : labels) {
-        label_offset += sizeof(OpCode_t); // cmd type
+        label_offset += sizeof(Opcode_t); // cmd type
         label_offset += sizeof(uint32_t); // blockid
         label_offset += sizeof(uint64_t); // block pos
     }
 
     for (Label &label : labels) {
         // store addresses of each label at top of file
-        OpCodes opcode = OpCode_store_address;
+        Opcode_t opcode = Opcode_store_address;
         uint32_t id = (uint32_t)label.id;
         uint64_t addr = (uint64_t)label.location + label_offset;
 
-        filestream.write((char*)&opcode, sizeof(OpCode_t));
+        filestream.write((char*)&opcode, sizeof(Opcode_t));
         filestream.write((char*)&id, sizeof(uint32_t));
         filestream.write((char*)&addr, sizeof(uint64_t));
     }
@@ -40,15 +40,15 @@ bool BytecodeGenerator::Emit(std::ostream &filestream)
     for (Instruction<> &ins : bstream.instructions) {
         switch (ins.data.back()[0]) {
             // FALLTHROUGH
-        case OpCode_ifl:
-        case OpCode_dfl:
-        case OpCode_irl:
-        case OpCode_drl:
-        case OpCode_irl_if_true:
-        case OpCode_irl_if_false:
+        case Opcode_ifl:
+        case Opcode_dfl:
+        case Opcode_irl:
+        case Opcode_drl:
+        case Opcode_irl_if_true:
+        case Opcode_irl_if_false:
             ins.Write(filestream);
             break;
-        case OpCode_store_address:
+        case Opcode_store_address:
         {
             uint64_t addr = 0;
             addr += ins.data.back().size(); // cmd type
@@ -64,75 +64,56 @@ bool BytecodeGenerator::Emit(std::ostream &filestream)
             break;
         }
         // FALLTHROUGH
-        case OpCode_jump:
-        case OpCode_jump_if_true:
-        case OpCode_jump_if_false:
-        case OpCode_try_catch_block:
-        case OpCode_store_as_local:
-        case OpCode_new_native_object:
-        case OpCode_array_index:
-        case OpCode_new_member:
-        case OpCode_load_member:
-        case OpCode_new_structure:
-            ins.Write(filestream);
-            break;
-        case OpCode_new_function:
-        {
-            uint64_t addr = 0;
-            addr += ins.data.back().size(); // cmd type
-            addr += sizeof(uint8_t); // is global
-            addr += sizeof(uint32_t); // no. of args
-            addr += sizeof(uint8_t); // is variadic
-            addr += sizeof(uint64_t); // block pos
-
-            uint64_t pos = (uint64_t)filestream.tellp();
-            uint64_t offset_pos = pos + addr;
-
-            ins.Write(filestream);
-
-            filestream.write((char*)&offset_pos, sizeof(uint64_t)); // offset pos
-
-            break;
-        }
-        // FALLTHROUGH
-        case OpCode_invoke_object:
-        case OpCode_return:
-        case OpCode_leave:
-        case OpCode_break:
-        case OpCode_continue:
-        case OpCode_print:
-        case OpCode_load_local:
-        case OpCode_load_integer:
-        case OpCode_load_float:
-        case OpCode_load_string:
-        case OpCode_load_null:
-        case OpCode_pop:
-        case OpCode_unary_minus:
-        case OpCode_unary_not:
-        case OpCode_add:
-        case OpCode_sub:
-        case OpCode_mul:
-        case OpCode_div:
-        case OpCode_mod:
-        case OpCode_pow:
-        case OpCode_and:
-        case OpCode_or:
-        case OpCode_eql:
-        case OpCode_neql:
-        case OpCode_less:
-        case OpCode_greater:
-        case OpCode_less_eql:
-        case OpCode_greater_eql:
-        case OpCode_bit_and:
-        case OpCode_bit_or:
-        case OpCode_bit_xor:
-        case OpCode_left_shift:
-        case OpCode_right_shift:
-        case OpCode_assign:
-        case OpCode_add_assign:
-        case OpCode_sub_assign:
-        case OpCode_mul_assign:
-        case OpCode_div_assign:
+        case Opcode_jump:
+        case Opcode_jump_if_true:
+        case Opcode_jump_if_false:
+        case Opcode_try_catch_block:
+        case Opcode_store_as_local:
+        case Opcode_new_native_object:
+        case Opcode_array_index:
+        case Opcode_new_member:
+        case Opcode_load_member:
+        case Opcode_new_structure:
+        case Opcode_new_function:
+        case Opcode_invoke_object:
+        case Opcode_return:
+        case Opcode_leave:
+        case Opcode_break:
+        case Opcode_continue:
+        case Opcode_print:
+        case Opcode_load_local:
+        case Opcode_load_field:
+        case Opcode_load_integer:
+        case Opcode_load_float:
+        case Opcode_load_string:
+        case Opcode_load_null:
+        case Opcode_pop:
+        case Opcode_unary_minus:
+        case Opcode_unary_not:
+        case Opcode_add:
+        case Opcode_sub:
+        case Opcode_mul:
+        case Opcode_div:
+        case Opcode_mod:
+        case Opcode_pow:
+        case Opcode_and:
+        case Opcode_or:
+        case Opcode_eql:
+        case Opcode_neql:
+        case Opcode_less:
+        case Opcode_greater:
+        case Opcode_less_eql:
+        case Opcode_greater_eql:
+        case Opcode_bit_and:
+        case Opcode_bit_or:
+        case Opcode_bit_xor:
+        case Opcode_left_shift:
+        case Opcode_right_shift:
+        case Opcode_assign:
+        case Opcode_add_assign:
+        case Opcode_sub_assign:
+        case Opcode_mul_assign:
+        case Opcode_div_assign:
             ins.Write(filestream);
             break;
         default:

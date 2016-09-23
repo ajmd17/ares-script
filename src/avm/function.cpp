@@ -7,7 +7,9 @@
 
 namespace avm {
 Func::Func(uint64_t addr, uint32_t nargs, bool is_variadic)
-    : addr(addr), nargs(nargs), is_variadic(is_variadic)
+    : addr(addr), 
+      nargs(nargs), 
+      is_variadic(is_variadic)
 {
 }
 
@@ -24,18 +26,18 @@ void Func::invoke(VMState *state, uint32_t callargs)
 
         state->stream->Seek(addr);
 
-        auto origin_read_level = state->read_level;
+        int origin_read_level = state->read_level;
 
         // read instructions until function is completed
         while (state->stream->Position() < state->stream->Max()) {
-            OpCode_t ins;
+            Opcode_t ins;
             state->stream->Read(&ins);
             state->vm->HandleInstruction(ins);
 
-            if (ins == OpCode_return && (origin_read_level - 1 == state->read_level)) {
+            if (ins == Opcode_return && (origin_read_level - 1 == state->read_level)) {
                 state->stream->Seek(state->jump_positions.top());
                 state->jump_positions.pop();
-                DebugLog("Popping back to position: %d", state->stream->Position());
+                DEBUG_LOG("Popping back to position: %d", state->stream->Position());
                 break;
             }
         }
@@ -54,7 +56,7 @@ size_t Func::NumArgs() const
 
 Reference Func::Clone(VMState *state)
 {
-    auto ref = Reference(*state->heap.AllocObject<Func>(addr, nargs, is_variadic));
+    Reference ref(*state->heap.AllocObject<Func>(addr, nargs, is_variadic));
 
     // copy all members
     for (auto &&member : fields) {

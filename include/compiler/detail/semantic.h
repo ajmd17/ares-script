@@ -63,9 +63,7 @@ private:
     // Returns the use count of a variable/function.
     void IncrementUseCount(AstNode *);
     // Returns true if variable was found.
-    bool FindVariable(const std::string &, bool = true);
-    // Returns true if variable was found. A pointer to the variable is given.
-    bool FindVariable(const std::string &, bool, Symbol *&);
+    SymbolQueryResult FindVariable(const std::string &identifier, bool = true);
 
     void IncreaseBlock(LevelType);
     void DecreaseBlock();
