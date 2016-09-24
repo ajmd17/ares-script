@@ -39,6 +39,7 @@ const std::map<ErrorType, std::string> BuildMessage::messages = {
     { Msg_else_outside_if, "'else' not connected to an if statement" },
     { Msg_alias_missing_assignment, "alias '%' must have an assignment" },
     { Msg_alias_must_be_identifier, "alias '%' must reference an identifier" },
+    { Msg_unrecognized_alias_type, "unrecognized alias type for '%'" },
     { Msg_unsupported_feature, "unsupported feature" },
 
     /* Warnings */

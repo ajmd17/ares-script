@@ -238,9 +238,11 @@ enum Opcodes : Opcode_t {
     Opcode_load_local,
     /**
     load_field
-      Arguments: Index (i32)
+      Arguments: Frame index difference (i32), Field index (i32)
       RL <=> FL: Yes
-      Effects: The object in the frame the given index is loaded onto the stack.
+      Effects: The frame index difference is the field's frame level, subtracted from current, active frame level.
+               The object at the field index within the frame with the level (current frame level - frame index difference)
+               is pushed onto the stack.
     */
     Opcode_load_field,
     /**

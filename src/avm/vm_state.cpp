@@ -1,4 +1,5 @@
 #include <detail/vm_state.h>
+#include <cstdio>
 
 namespace avm {
 VMState::VMState(VMInstance *vm)
@@ -38,8 +39,32 @@ void VMState::HandleException(const Exception &except)
     frames[frame_level]->exception_occured = true;
     if (!can_handle_exceptions) {
         std::cout << "Unhandled exception: " << except.message << "\n";
-        std::cin.get();
-        std::abort();
+        std::cout << "Type 'd' and press return to display memory dump\n";
+
+        if (std::getchar() == (int)'d') {
+            std::stringstream ss;
+            ss << "Stack:\n";
+            for (auto &&it : stack) {
+                ss << "\t" << it.Ref()->ToString() << "\n";
+            }
+            ss << "\nHeap:\n";
+            heap.DumpHeap(ss);
+
+            ss << "\nFields:\n";
+            for (size_t i = 0; i < frames.size(); i++) {
+                ss << "#" << i << " {\n";
+                Frame *frame = frames[i];
+                for (size_t j = 0; j < frame->locals.size(); j++) {
+                    ss << "\t#" << j << "\t" << frame->locals[j].first << "\n";
+                }
+                ss << "}\n";
+            }
+
+            std::cout << ss.str();
+        }
+
+        std::system("pause");
+        std::exit(EXIT_FAILURE);
     }
 }
 }

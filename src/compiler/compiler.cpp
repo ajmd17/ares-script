@@ -95,106 +95,106 @@ void Compiler::Accept(AstNode *node)
     }
 
     switch (node->type) {
-    case ast_type_imports:
+    case Ast_type_imports:
         Accept(static_cast<AstImports*>(node));
         break;
-    case ast_type_import:
+    case Ast_type_import:
         Accept(static_cast<AstImport*>(node));
         break;
-    case ast_type_statement:
+    case Ast_type_statement:
         Accept(static_cast<AstStatement*>(node));
         break;
-    case ast_type_block:
+    case Ast_type_block:
         Accept(static_cast<AstBlock*>(node));
         break;
-    case ast_type_expression:
+    case Ast_type_expression:
         Accept(static_cast<AstExpression*>(node));
         break;
-    case ast_type_binop:
+    case Ast_type_binop:
         Accept(static_cast<AstBinaryOp*>(node));
         break;
-    case ast_type_unop:
+    case Ast_type_unop:
         Accept(static_cast<AstUnaryOp*>(node));
         break;
-    case ast_type_array_access:
+    case Ast_type_array_access:
         Accept(static_cast<AstArrayAccess*>(node));
         break;
-    case ast_type_member_access:
+    case Ast_type_member_access:
         Accept(static_cast<AstMemberAccess*>(node));
         break;
-    case ast_type_module_access:
+    case Ast_type_module_access:
         Accept(static_cast<AstModuleAccess*>(node));
         break;
-    case ast_type_var_declaration:
+    case Ast_type_var_declaration:
         Accept(static_cast<AstVariableDeclaration*>(node));
         break;
-    case ast_type_alias:
+    case Ast_type_alias:
         Accept(static_cast<AstAlias*>(node));
         break;
-    case ast_type_use_module:
+    case Ast_type_use_module:
         Accept(static_cast<AstUseModule*>(node));
         break;
-    case ast_type_variable:
+    case Ast_type_variable:
         Accept(static_cast<AstVariable*>(node));
         break;
-    case ast_type_integer:
+    case Ast_type_integer:
         Accept(static_cast<AstInteger*>(node));
         break;
-    case ast_type_float:
+    case Ast_type_float:
         Accept(static_cast<AstFloat*>(node));
         break;
-    case ast_type_string:
+    case Ast_type_string:
         Accept(static_cast<AstString*>(node));
         break;
-    case ast_type_true:
+    case Ast_type_true:
         Accept(static_cast<AstTrue*>(node));
         break;
-    case ast_type_false:
+    case Ast_type_false:
         Accept(static_cast<AstFalse*>(node));
         break;
-    case ast_type_null:
+    case Ast_type_null:
         Accept(static_cast<AstNull*>(node));
         break;
-    case ast_type_self:
+    case Ast_type_self:
         Accept(static_cast<AstSelf*>(node));
         break;
-    case ast_type_new:
+    case Ast_type_new:
         Accept(static_cast<AstNew*>(node));
         break;
-    case ast_type_function_definition:
+    case Ast_type_function_definition:
         Accept(static_cast<AstFunctionDefinition*>(node));
         break;
-    case ast_type_function_expression:
+    case Ast_type_function_expression:
         Accept(static_cast<AstFunctionExpression*>(node));
         break;
-    case ast_type_function_call:
+    case Ast_type_function_call:
         Accept(static_cast<AstFunctionCall*>(node));
         break;
-    case ast_type_class_declaration:
+    case Ast_type_class_declaration:
         Accept(static_cast<AstClass*>(node));
         break;
-    case ast_type_object_expression:
+    case Ast_type_object_expression:
         Accept(static_cast<AstObjectExpression*>(node));
         break;
-    case ast_type_enum:
+    case Ast_type_enum:
         Accept(static_cast<AstEnum*>(node));
         break;
-    case ast_type_print:
+    case Ast_type_print:
         Accept(static_cast<AstPrintStmt*>(node));
         break;
-    case ast_type_return:
+    case Ast_type_return:
         Accept(static_cast<AstReturnStmt*>(node));
         break;
-    case ast_type_if_statement:
+    case Ast_type_if_statement:
         Accept(static_cast<AstIfStmt*>(node));
         break;
-    case ast_type_for_loop:
+    case Ast_type_for_loop:
         Accept(static_cast<AstForLoop*>(node));
         break;
-    case ast_type_while_loop:
+    case Ast_type_while_loop:
         Accept(static_cast<AstWhileLoop*>(node));
         break;
-    case ast_type_try_catch:
+    case Ast_type_try_catch:
         Accept(static_cast<AstTryCatch*>(node));
         break;
     default:
@@ -233,7 +233,7 @@ void Compiler::Accept(AstBlock *node)
         auto &child = node->children[counter];
         Accept(child.get());
 
-        if (config::optimize_remove_dead_code && child->type == ast_type_return) {
+        if (config::optimize_remove_dead_code && child->type == Ast_type_return) {
             counter = node->children.size();
             break;
         }
@@ -382,14 +382,14 @@ void Compiler::Accept(AstMemberAccess *node)
         Accept(node->right.get());
     } else {
         Accept(node->left.get());
-        if (node->right->type == ast_type_member_access) {
+        if (node->right->type == Ast_type_member_access) {
             Accept(node->right.get());
             auto right_ast = static_cast<AstMemberAccess*>(node->right.get());
             bstream << Instruction<Opcode_t, int32_t, const char *>(Opcode_load_member, right_ast->left_str.length() + 1, right_ast->left_str.c_str());
-        } else if (node->right->type == ast_type_variable) {
+        } else if (node->right->type == Ast_type_variable) {
             auto right_ast = static_cast<AstVariable*>(node->right.get());
             bstream << Instruction<Opcode_t, int32_t, const char *>(Opcode_load_member, right_ast->name.length() + 1, right_ast->name.c_str());
-        } else if (node->right->type == ast_type_function_call) {
+        } else if (node->right->type == Ast_type_function_call) {
             // accept member function call
             auto right_ast = static_cast<AstFunctionCall*>(node->right.get());
 
@@ -445,12 +445,15 @@ void Compiler::Accept(AstVariable *node)
             node->is_const && 
             node->is_literal && 
             node->current_value != nullptr) {
-            // accept the pure values of constant literals
+            // inline constant literals
             Accept(node->current_value);
         } else {
             std::string var_name(state.MakeVariableName(node->name, node->module));
             bstream << Instruction<Opcode_t, int32_t, const char*>(Opcode_load_local,
                 var_name.length() + 1, var_name.c_str());
+
+            /*bstream << Instruction<Opcode_t, int32_t, int32_t>(Opcode_load_field,
+                state.level - node->owner_level, node->field_index);*/
         }
     }
 }
@@ -733,7 +736,7 @@ void Compiler::Accept(AstForLoop *node)
 
      auto id = ++state.block_id_counter;
 
-     if (node->range->type == ast_type_range) {
+     if (node->range->type == Ast_type_range) {
          AstRange *range = static_cast<AstRange*>(node->range.get());
          AVMInteger_t first = range->first, second = range->second;
          AVMInteger_t diff = second - first;

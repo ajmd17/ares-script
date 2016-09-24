@@ -1,13 +1,13 @@
 #include <detail/semantic.h>
+#include <lexer.h>
+#include <parser.h>
+#include <config.h>
 
 #include <memory>
 #include <utility>
 #include <iostream>
 #include <fstream>
-
-#include <lexer.h>
-#include <parser.h>
-#include <config.h>
+#include <cassert>
 
 namespace avm {
 SemanticAnalyzer::SemanticAnalyzer(CompilerState *state_ptr)
@@ -57,6 +57,8 @@ void SemanticAnalyzer::AddModule(const ModuleDefine &def)
             symbol.original_name = meth.name;
             symbol.nargs = meth.nargs;
             symbol.is_native = true;
+            symbol.owner_level = state_ptr->level;
+            symbol.field_index = state_ptr->CurrentLevel().locals.size();
             level.locals.push_back({ var_name, symbol });
         }
 
@@ -73,110 +75,111 @@ void SemanticAnalyzer::Accept(AstModule *node)
 
 void SemanticAnalyzer::Accept(AstNode *node)
 {
-    if (!node)
+    if (!node) {
         return;
+    }
 
     switch (node->type) {
-    case ast_type_imports:
+    case Ast_type_imports:
         Accept(static_cast<AstImports*>(node));
         break;
-    case ast_type_import:
+    case Ast_type_import:
         Accept(static_cast<AstImport*>(node));
         break;
-    case ast_type_statement:
+    case Ast_type_statement:
         Accept(static_cast<AstStatement*>(node));
         break;
-    case ast_type_block:
+    case Ast_type_block:
         Accept(static_cast<AstBlock*>(node));
         break;
-    case ast_type_expression:
+    case Ast_type_expression:
         Accept(static_cast<AstExpression*>(node));
         break;
-    case ast_type_binop:
+    case Ast_type_binop:
         Accept(static_cast<AstBinaryOp*>(node));
         break;
-    case ast_type_unop:
+    case Ast_type_unop:
         Accept(static_cast<AstUnaryOp*>(node));
         break;
-    case ast_type_array_access:
+    case Ast_type_array_access:
         Accept(static_cast<AstArrayAccess*>(node));
         break;
-    case ast_type_member_access:
+    case Ast_type_member_access:
         Accept(static_cast<AstMemberAccess*>(node));
         break;
-    case ast_type_module_access:
+    case Ast_type_module_access:
         Accept(static_cast<AstModuleAccess*>(node));
         break;
-    case ast_type_var_declaration:
+    case Ast_type_var_declaration:
         Accept(static_cast<AstVariableDeclaration*>(node));
         break;
-    case ast_type_alias:
+    case Ast_type_alias:
         Accept(static_cast<AstAlias*>(node));
         break;
-    case ast_type_use_module:
+    case Ast_type_use_module:
         Accept(static_cast<AstUseModule*>(node));
         break;
-    case ast_type_variable:
+    case Ast_type_variable:
         Accept(static_cast<AstVariable*>(node));
         break;
-    case ast_type_integer:
+    case Ast_type_integer:
         Accept(static_cast<AstInteger*>(node));
         break;
-    case ast_type_float:
+    case Ast_type_float:
         Accept(static_cast<AstFloat*>(node));
         break;
-    case ast_type_string:
+    case Ast_type_string:
         Accept(static_cast<AstString*>(node));
         break;
-    case ast_type_true:
+    case Ast_type_true:
         Accept(static_cast<AstTrue*>(node));
         break;
-    case ast_type_false:
+    case Ast_type_false:
         Accept(static_cast<AstFalse*>(node));
         break;
-    case ast_type_null:
+    case Ast_type_null:
         Accept(static_cast<AstNull*>(node));
         break;
-    case ast_type_self:
+    case Ast_type_self:
         Accept(static_cast<AstSelf*>(node));
         break;
-    case ast_type_new:
+    case Ast_type_new:
         Accept(static_cast<AstNew*>(node));
         break;
-    case ast_type_function_definition:
+    case Ast_type_function_definition:
         Accept(static_cast<AstFunctionDefinition*>(node));
         break;
-    case ast_type_function_expression:
+    case Ast_type_function_expression:
         Accept(static_cast<AstFunctionExpression*>(node));
         break;
-    case ast_type_function_call:
+    case Ast_type_function_call:
         Accept(static_cast<AstFunctionCall*>(node));
         break;
-    case ast_type_class_declaration:
+    case Ast_type_class_declaration:
         Accept(static_cast<AstClass*>(node));
         break;
-    case ast_type_object_expression:
+    case Ast_type_object_expression:
         Accept(static_cast<AstObjectExpression*>(node));
         break;
-    case ast_type_enum:
+    case Ast_type_enum:
         Accept(static_cast<AstEnum*>(node));
         break;
-    case ast_type_print:
+    case Ast_type_print:
         Accept(static_cast<AstPrintStmt*>(node));
         break;
-    case ast_type_return:
+    case Ast_type_return:
         Accept(static_cast<AstReturnStmt*>(node));
         break;
-    case ast_type_if_statement:
+    case Ast_type_if_statement:
         Accept(static_cast<AstIfStmt*>(node));
         break;
-    case ast_type_for_loop:
+    case Ast_type_for_loop:
         Accept(static_cast<AstForLoop*>(node));
         break;
-    case ast_type_while_loop:
+    case Ast_type_while_loop:
         Accept(static_cast<AstWhileLoop*>(node));
         break;
-    case ast_type_try_catch:
+    case Ast_type_try_catch:
         Accept(static_cast<AstTryCatch*>(node));
         break;
     default:
@@ -263,9 +266,9 @@ void SemanticAnalyzer::Accept(AstBlock *node)
         Accept(child.get());
 
         if (child) {
-            if (child->type == ast_type_return) {
+            if (child->type == Ast_type_return) {
                 in_dead_code = true;
-            } else if (in_dead_code && !warning_shown && child->type != ast_type_statement) {
+            } else if (in_dead_code && !warning_shown && child->type != Ast_type_statement) {
                 WarningMessage(Msg_unreachable_code, child->location);
                 warning_shown = true;
             }
@@ -291,11 +294,11 @@ void SemanticAnalyzer::Accept(AstBinaryOp *node)
     switch (node->op) {
     case BinOp_assign:
         // assignment, change the set type
-        if (left->type == ast_type_variable) {
+        if (left->type == Ast_type_variable) {
             auto *casted = static_cast<AstVariable*>(left.get());
             if (!casted->is_const) {
                 auto *right_side = right.get();
-                if (right->type == ast_type_expression) {
+                if (right->type == Ast_type_expression) {
                     // get inner child
                     auto *expr_ast = static_cast<AstExpression*>(right.get());
                     right_side = expr_ast->child.get();
@@ -312,9 +315,10 @@ void SemanticAnalyzer::Accept(AstBinaryOp *node)
                 casted->symbol_ptr->current_value = right.get();
                 casted->current_value = casted->symbol_ptr->current_value;
                 switch (right_side->type) {
-                case ast_type_integer:
-                case ast_type_float:
-                case ast_type_string:
+                    // set is_literal only if it is a literal type (int, float or string)
+                case Ast_type_integer:
+                case Ast_type_float:
+                case Ast_type_string:
                     casted->symbol_ptr->is_literal = true;
                     break;
                 default:
@@ -328,7 +332,7 @@ void SemanticAnalyzer::Accept(AstBinaryOp *node)
     case BinOp_subtract_assign:
     case BinOp_multiply_assign:
     case BinOp_divide_assign:
-        if (left->type == ast_type_variable) {
+        if (left->type == Ast_type_variable) {
             auto *casted = static_cast<AstVariable*>(left.get());
             if (casted->is_const) {
                 ErrorMsg(Msg_const_identifier, casted->location, casted->name);
@@ -341,9 +345,9 @@ void SemanticAnalyzer::Accept(AstBinaryOp *node)
             if (right->HasAttribute("inline")) {
                 ErrorMsg(Msg_prohibited_action_attribute, right->location, "inline");
             }
-        } else if (left->type == ast_type_member_access) {
+        } else if (left->type == Ast_type_member_access) {
             /// \todo: check const
-        } else if (left->type == ast_type_array_access) {
+        } else if (left->type == Ast_type_array_access) {
             /// \todo: check const
         } else {
             ErrorMsg(Msg_expected_identifier, left->location);
@@ -374,9 +378,9 @@ void SemanticAnalyzer::Accept(AstMemberAccess *node)
         Accept(node->right.get());
     } else {
         Accept(node->left.get());
-        if (node->right->type == ast_type_member_access) {
+        if (node->right->type == Ast_type_member_access) {
             Accept(node->right.get());
-        } else if (node->right->type != ast_type_variable && node->right->type != ast_type_function_call) {
+        } else if (node->right->type != Ast_type_variable && node->right->type != Ast_type_function_call) {
             ErrorMsg(Msg_internal_error, node->location);
         }
     }
@@ -413,7 +417,7 @@ void SemanticAnalyzer::Accept(AstVariableDeclaration *node)
         symbol.current_value = node->assignment.get();
 
         AstNode *right_side = symbol.current_value;
-        if (right_side->type == ast_type_expression) {
+        if (right_side->type == Ast_type_expression) {
             // get inner child
             AstExpression *expr_ast = static_cast<AstExpression*>(symbol.current_value);
             right_side = expr_ast->child.get();
@@ -428,9 +432,9 @@ void SemanticAnalyzer::Accept(AstVariableDeclaration *node)
         }
 
         switch (right_side->type) {
-        case ast_type_integer:
-        case ast_type_float:
-        case ast_type_string:
+        case Ast_type_integer:
+        case Ast_type_float:
+        case Ast_type_string:
             symbol.is_literal = true;
             break;
         default:
@@ -438,6 +442,8 @@ void SemanticAnalyzer::Accept(AstVariableDeclaration *node)
             break;
         }
 
+        symbol.owner_level = state_ptr->level;
+        symbol.field_index = state_ptr->CurrentLevel().locals.size();
         level.locals.push_back({ var_name, symbol });
 
         Accept(node->assignment.get());
@@ -458,6 +464,30 @@ void SemanticAnalyzer::Accept(AstAlias *node)
         symbol.node = node->alias_to.get();
         symbol.original_name = node->name;
         symbol.is_alias = true;
+        symbol.owner_level = -1;
+        symbol.field_index = -1;
+
+        AstNode *candidate = node->alias_to.get();
+        while (candidate != nullptr) {
+            if (candidate->type == Ast_type_member_access) {
+                AstMemberAccess *ast_mem = dynamic_cast<AstMemberAccess*>(candidate);
+                if (!ast_mem) { throw std::runtime_error("internal ast node error"); }
+                candidate = ast_mem->right.get();
+                continue;
+            } else if (candidate->type == Ast_type_variable) {
+                AstVariable *ast_var = dynamic_cast<AstVariable*>(candidate);
+                if (!ast_var) { throw std::runtime_error("internal ast node error"); }
+                // we can use the variable
+                // set the field index so the symbol refers to this variable:
+                symbol.owner_level = ast_var->owner_level;
+                symbol.field_index = ast_var->field_index;
+                break;
+            } else {
+                ErrorMsg(Msg_unrecognized_alias_type, node->location, node->name);
+                break;
+            }
+        }
+
         state_ptr->CurrentLevel().locals.push_back({ var_name, symbol });
     }
 }
@@ -467,7 +497,7 @@ void SemanticAnalyzer::Accept(AstUseModule *node)
     /*for (auto &&it : state_ptr->levels[0].locals) {
       AstModule *module = nullptr;
       if (it.second.node && it.second.node->module &&
-          it.second.node->module->type == ast_type_module) {
+          it.second.node->module->type == Ast_type_module) {
         module = static_cast<AstModule*>(it.second.node->module);
         if (module->name == node->name) {
           // add an alias for this object
@@ -503,11 +533,11 @@ void SemanticAnalyzer::Accept(AstVariable *node)
         node->is_literal = query.symbol->is_literal;
         node->current_value = query.symbol->current_value;
         node->symbol_ptr = query.symbol;
-        node->owner_level = query.owner_level;
-        node->field_index = query.field_index;
+        node->owner_level = query.symbol->owner_level;
+        node->field_index = query.symbol->field_index;
 
         if (query.symbol->node != nullptr) {
-            if (query.symbol->node->type == ast_type_function_definition) {
+            if (query.symbol->node->type == Ast_type_function_definition) {
                 if (query.symbol->node->HasAttribute("inline")) {
                     ErrorMsg(Msg_prohibited_action_attribute, node->location, "inline");
                 }
@@ -570,6 +600,8 @@ void SemanticAnalyzer::Accept(AstFunctionDefinition *node)
             Symbol symbol;
             symbol.node = node;
             symbol.original_name = node->name;
+            symbol.owner_level = state_ptr->level;
+            symbol.field_index = state_ptr->CurrentLevel().locals.size();
             state_ptr->CurrentLevel().locals.push_back({ var_name, symbol });
         }
 
@@ -591,14 +623,14 @@ void SemanticAnalyzer::Accept(AstFunctionDefinition *node)
 
                 if (!body->children.empty()) {
                     size_t idx = body->children.size() - 1;
-                    if (body->children[idx] && body->children[idx]->type == ast_type_return) {
+                    if (body->children[idx] && body->children[idx]->type == Ast_type_return) {
                         has_return = true;
                     } else {
-                        while (idx > 0 && body->children[idx]->type == ast_type_statement) {
-                            if (body->children[idx - 1]->type == ast_type_return) {
+                        while (idx > 0 && body->children[idx]->type == Ast_type_statement) {
+                            if (body->children[idx - 1]->type == Ast_type_return) {
                                 has_return = true;
                                 break;
-                            } else if (body->children[idx - 1]->type != ast_type_statement) {
+                            } else if (body->children[idx - 1]->type != Ast_type_statement) {
                                 has_return = false;
                                 break;
                             }
@@ -630,6 +662,8 @@ void SemanticAnalyzer::Accept(AstFunctionDefinition *node)
                 Symbol symbol;
                 symbol.node = nullptr;
                 symbol.original_name = param;
+                symbol.owner_level = state_ptr->level;
+                symbol.field_index = state_ptr->CurrentLevel().locals.size();
                 state_ptr->CurrentLevel().locals.push_back({ var_name, symbol });
             }
 
@@ -643,6 +677,8 @@ void SemanticAnalyzer::Accept(AstFunctionDefinition *node)
                 symbol.node = node;
                 symbol.original_name = node->name;
                 symbol.is_const = true;
+                symbol.owner_level = state_ptr->level;
+                symbol.field_index = state_ptr->CurrentLevel().locals.size();
                 state_ptr->CurrentLevel().locals.push_back({ var_name, symbol });
             }
         }
@@ -667,21 +703,20 @@ void SemanticAnalyzer::Accept(AstFunctionExpression *node)
             body->AddChild(std::move(ret_ast));
         } else {
             bool has_return = false;
-            size_t idx = body->children.size() - 1;
+            size_t index = body->children.size() - 1;
 
-            if (body->children[idx]->type == ast_type_return) {
+            if (body->children[index]->type == Ast_type_return) {
                 has_return = true;
             } else {
-                while (idx > 0 && body->children[idx]->type == ast_type_statement) {
-                    if (body->children[idx - 1]->type == ast_type_return) {
+                while (index > 0 && body->children[index]->type == Ast_type_statement) {
+                    if (body->children[index - 1]->type == Ast_type_return) {
                         has_return = true;
                         break;
-                    } else if (body->children[idx - 1]->type != ast_type_statement) {
+                    } else if (body->children[index - 1]->type != Ast_type_statement) {
                         has_return = false;
                         break;
                     }
-
-                    --idx;
+                    --index;
                 }
             }
 
@@ -707,6 +742,8 @@ void SemanticAnalyzer::Accept(AstFunctionExpression *node)
             Symbol symbol;
             symbol.node = node;
             symbol.original_name = param;
+            symbol.owner_level = state_ptr->level;
+            symbol.field_index = state_ptr->CurrentLevel().locals.size();
             state_ptr->CurrentLevel().locals.push_back({ var_name, symbol });
         }
 
@@ -776,6 +813,8 @@ void SemanticAnalyzer::Accept(AstEnum *node)
             symbol.original_name = it.first;
             symbol.is_alias = true;
             symbol.is_const = true;
+            symbol.owner_level = state_ptr->level;
+            symbol.field_index = state_ptr->CurrentLevel().locals.size();
             state_ptr->CurrentLevel().locals.push_back({ var_name, symbol });
         }
     }
@@ -902,8 +941,6 @@ SymbolQueryResult SemanticAnalyzer::FindVariable(const std::string &identifier, 
     SymbolQueryResult result;
     result.found = false;
     result.symbol = nullptr;
-    result.owner_level = 0;
-    result.field_index = 0;
 
     // start at current level
     int start = state_ptr->level;
@@ -927,8 +964,6 @@ SymbolQueryResult SemanticAnalyzer::FindVariable(const std::string &identifier, 
                 // found the symbol
                 result.found = true;
                 result.symbol = &value;
-                result.owner_level = start;
-                result.field_index = i;
                 return result;
             }
         }

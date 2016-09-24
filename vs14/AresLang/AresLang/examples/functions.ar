@@ -9,20 +9,20 @@ TestFunction1();
 
 /* Alternative function syntax */
 var TestFunction2 = func {
-  println("Hello world from TestFunction2!");
+  Console.println("Hello world from TestFunction2!");
 }
 TestFunction2();
 
 /* Function with parameters */
 func TestFunction3(name) {
-  println("Hello, " + name);
+  Console.println("Hello, " + name);
 }
 TestFunction3("Earth");
 
 /* Functions can return other functions */
 func TestFunction4 {
   print "before inner\n";
-  return func { println("A function within a function!"); }
+  return func { Console.println("A function within a function!"); }
 }
 
 var result = TestFunction4();

@@ -18,8 +18,6 @@ static const int compiler_global_level = 0;
 struct SymbolQueryResult {
     bool found = false;
     Symbol *symbol = nullptr;
-    int owner_level = 0;
-    int field_index = 0;
 
     inline operator bool() const { return found; }
 };
@@ -43,50 +41,10 @@ struct Symbol {
     bool is_native = false;
     // Number of parameters required, if it is a native function
     size_t nargs = 0;
-};
-
-class SymbolTable {
-public:
-    SymbolTable()
-    {
-    }
-
-    SymbolTable(SymbolTable &&other)
-        : keys(std::move(other.keys)),
-          values(std::move(other.values))
-    {
-    }
-
-    inline size_t Size() const { return keys.size(); }
-
-    inline void Insert(const std::string &key, std::unique_ptr<Symbol> &&value)
-    {
-        keys.push_back(key);
-        values.push_back(std::move(value));
-    }
-
-    inline std::string &KeyAt(size_t index) { return keys.at(index); }
-    inline const std::string &KeyAt(size_t index) const { return keys.at(index); }
-    inline std::unique_ptr<Symbol> &ValueAt(size_t index) { return values.at(index); }
-    inline const std::unique_ptr<Symbol> &ValueAt(size_t index) const { return values.at(index); }
-
-    inline std::unique_ptr<Symbol> &At(const std::string &key)
-    {
-        auto key_it = std::find(keys.begin(), keys.end(), key);
-        size_t key_index = key_it - keys.begin();
-        return values.at(key_index);
-    }
-
-    inline const std::unique_ptr<Symbol> &At(const std::string &key) const
-    {
-        auto key_it = std::find(keys.begin(), keys.end(), key);
-        size_t key_index = key_it - keys.begin();
-        return values.at(key_index);
-    }
-
-private:
-    std::vector<std::string> keys;
-    std::vector<std::unique_ptr<Symbol>> values;
+    // the owner frame level of this symbol
+    int owner_level = -1;
+    // the index of this symbol
+    int field_index = -1;
 };
 
 struct Label {
@@ -121,18 +79,6 @@ struct CompilerState {
 
     struct LevelInfo {
         LevelType type;
-       /* SymbolTable locals;
-
-        LevelInfo()
-        {
-        }
-
-        LevelInfo(LevelInfo &&other)
-            : type(std::move(other.type)),
-              locals(std::move(other.locals))
-        {
-        }*/
-
         std::vector<std::pair<std::string, Symbol>> locals;
     };
 

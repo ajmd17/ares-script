@@ -85,7 +85,6 @@ bool Script::CompileAndRun(const std::string &code,
         compiler.Module("Console")
             .Define("system", 1)
             .Define("println", 1)
-            // .Define("printf", 1)
             .Define("readln", 0);
 
         if (compiler.Compile(unit.get())) {
@@ -140,6 +139,9 @@ void Script::RunFromBytecode(avm::ByteStream *stream)
 {
     VMInstance *vm = new VMInstance();
 
+    vm->BindFunction("Clock_start", Tic);
+    vm->BindFunction("Clock_stop", Toc);
+
     vm->BindFunction("FileIO_open", RuntimeLib::FileIO_open);
     vm->BindFunction("FileIO_write", RuntimeLib::FileIO_write);
     vm->BindFunction("FileIO_read", RuntimeLib::FileIO_read);
@@ -149,20 +151,16 @@ void Script::RunFromBytecode(avm::ByteStream *stream)
     vm->BindFunction("Runtime_loadfunc", RuntimeLib::Runtime_loadfunc);
     vm->BindFunction("Runtime_invoke", RuntimeLib::Runtime_invoke);
 
-    vm->BindFunction("Clock_start", Tic);
-    vm->BindFunction("Clock_stop", Toc);
-
-    vm->BindFunction("Console_println", RuntimeLib::Console_println);
-    //vm->BindFunction("Console_printf", RuntimeLib::Console_printf);
-    vm->BindFunction("Console_readln", RuntimeLib::Console_readln);
-    vm->BindFunction("Console_system", RuntimeLib::Console_system);
-
     vm->BindFunction("Reflection_typeof", RuntimeLib::Reflection_typeof);
 
     vm->BindFunction("Convert_toString", RuntimeLib::Convert_toString);
     vm->BindFunction("Convert_toInt", RuntimeLib::Convert_toInt);
     vm->BindFunction("Convert_toFloat", RuntimeLib::Convert_toFloat);
     vm->BindFunction("Convert_toBool", RuntimeLib::Convert_toBool);
+
+    vm->BindFunction("Console_system", RuntimeLib::Console_system);
+    vm->BindFunction("Console_println", RuntimeLib::Console_println);
+    vm->BindFunction("Console_readln", RuntimeLib::Console_readln);
 
     vm->Execute(stream);
 

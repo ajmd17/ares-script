@@ -15,15 +15,6 @@ VMInstance::~VMInstance()
 {
     GC();
 
-    std::stringstream ss;
-    ss << "Stack dump:\n";
-    for (auto &&it : state->stack) {
-        ss << "\t" << it.Ref()->ToString() << "\n";
-    }
-    ss << "\nHeap dump:\n";
-    state->heap.DumpHeap(ss);
-
-    std::cout << ss.str() << "\n";
 
     delete state;
 }
@@ -854,15 +845,23 @@ void VMInstance::HandleInstruction(Opcode_t opcode)
     case Opcode_load_field:
     {
         if (state->read_level == state->frame_level) {
-            int32_t index;
-            state->stream->Read(&index);
+            struct {
+                int32_t frame_index_difference;
+                int32_t field_index;
+            } field_info;
 
-            DEBUG_LOG("Loading field #%d", index);
+            state->stream->Read(&field_info.frame_index_difference);
+            state->stream->Read(&field_info.field_index);
 
-            Frame *frame = state->frames[state->frame_level];
-            PushReference(frame->locals[index].second);
+            int32_t frame_index = state->frame_level - field_info.frame_index_difference;
+
+            DEBUG_LOG("Loading field #%d from frame #%d", field_info.field_index, frame_index);
+
+            Frame *frame = state->frames[frame_index];
+            PushReference(frame->locals[field_info.field_index].second);
 
         } else {
+            state->stream->Skip(sizeof(int32_t));
             state->stream->Skip(sizeof(int32_t));
         }
 

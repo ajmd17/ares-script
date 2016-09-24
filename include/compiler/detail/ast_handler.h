@@ -56,73 +56,73 @@ protected:
         }
 
         switch (node->type) {
-        case ast_type_imports:
+        case Ast_type_imports:
             return optimize(std::move(std::unique_ptr<AstImports>(static_cast<AstImports*>(node.release()))));
-        case ast_type_import:
+        case Ast_type_import:
             return optimize(std::move(std::unique_ptr<AstImport>(static_cast<AstImport*>(node.release()))));
-        case ast_type_statement:
+        case Ast_type_statement:
             return optimize(std::move(std::unique_ptr<AstStatement>(static_cast<AstStatement*>(node.release()))));
-        case ast_type_block:
+        case Ast_type_block:
             return optimize(std::move(std::unique_ptr<AstBlock>(static_cast<AstBlock*>(node.release()))));
-        case ast_type_expression:
+        case Ast_type_expression:
             return optimize(std::move(std::unique_ptr<AstExpression>(static_cast<AstExpression*>(node.release()))));
-        case ast_type_binop:
+        case Ast_type_binop:
             return optimize(std::move(std::unique_ptr<AstBinaryOp>(static_cast<AstBinaryOp*>(node.release()))));
-        case ast_type_unop:
+        case Ast_type_unop:
             return optimize(std::move(std::unique_ptr<AstUnaryOp>(static_cast<AstUnaryOp*>(node.release()))));
-        case ast_type_array_access:
+        case Ast_type_array_access:
             return optimize(std::move(std::unique_ptr<AstArrayAccess>(static_cast<AstArrayAccess*>(node.release()))));
-        case ast_type_member_access:
+        case Ast_type_member_access:
             return optimize(std::move(std::unique_ptr<AstMemberAccess>(static_cast<AstMemberAccess*>(node.release()))));
-        case ast_type_module_access:
+        case Ast_type_module_access:
             return optimize(std::move(std::unique_ptr<AstModuleAccess>(static_cast<AstModuleAccess*>(node.release()))));
-        case ast_type_var_declaration:
+        case Ast_type_var_declaration:
             return optimize(std::move(std::unique_ptr<AstVariableDeclaration>(static_cast<AstVariableDeclaration*>(node.release()))));
-        case ast_type_alias:
+        case Ast_type_alias:
             return optimize(std::move(std::unique_ptr<AstAlias>(static_cast<AstAlias*>(node.release()))));
-        case ast_type_use_module:
+        case Ast_type_use_module:
             return optimize(std::move(std::unique_ptr<AstUseModule>(static_cast<AstUseModule*>(node.release()))));
-        case ast_type_variable:
+        case Ast_type_variable:
             return optimize(std::move(std::unique_ptr<AstVariable>(static_cast<AstVariable*>(node.release()))));
-        case ast_type_integer:
+        case Ast_type_integer:
             return optimize(std::move(std::unique_ptr<AstInteger>(static_cast<AstInteger*>(node.release()))));
-        case ast_type_float:
+        case Ast_type_float:
             return optimize(std::move(std::unique_ptr<AstFloat>(static_cast<AstFloat*>(node.release()))));
-        case ast_type_string:
+        case Ast_type_string:
             return optimize(std::move(std::unique_ptr<AstString>(static_cast<AstString*>(node.release()))));
-        case ast_type_true:
+        case Ast_type_true:
             return optimize(std::move(std::unique_ptr<AstTrue>(static_cast<AstTrue*>(node.release()))));
-        case ast_type_false:
+        case Ast_type_false:
             return optimize(std::move(std::unique_ptr<AstFalse>(static_cast<AstFalse*>(node.release()))));
-        case ast_type_null:
+        case Ast_type_null:
             return optimize(std::move(std::unique_ptr<AstNull>(static_cast<AstNull*>(node.release()))));
-        case ast_type_self:
+        case Ast_type_self:
             return optimize(std::move(std::unique_ptr<AstSelf>(static_cast<AstSelf*>(node.release()))));
-        case ast_type_new:
+        case Ast_type_new:
             return optimize(std::move(std::unique_ptr<AstNew>(static_cast<AstNew*>(node.release()))));
-        case ast_type_function_definition:
+        case Ast_type_function_definition:
             return optimize(std::move(std::unique_ptr<AstFunctionDefinition>(static_cast<AstFunctionDefinition*>(node.release()))));
-        case ast_type_function_expression:
+        case Ast_type_function_expression:
             return optimize(std::move(std::unique_ptr<AstFunctionExpression>(static_cast<AstFunctionExpression*>(node.release()))));
-        case ast_type_function_call:
+        case Ast_type_function_call:
             return optimize(std::move(std::unique_ptr<AstFunctionCall>(static_cast<AstFunctionCall*>(node.release()))));
-        case ast_type_class_declaration:
+        case Ast_type_class_declaration:
             return optimize(std::move(std::unique_ptr<AstClass>(static_cast<AstClass*>(node.release()))));
-        case ast_type_object_expression:
+        case Ast_type_object_expression:
             return optimize(std::move(std::unique_ptr<AstObjectExpression>(static_cast<AstObjectExpression*>(node.release()))));
-        case ast_type_print:
+        case Ast_type_print:
             return optimize(std::move(std::unique_ptr<AstPrintStmt>(static_cast<AstPrintStmt*>(node.release()))));
-        case ast_type_return:
+        case Ast_type_return:
             return optimize(std::move(std::unique_ptr<AstReturnStmt>(static_cast<AstReturnStmt*>(node.release()))));
-        case ast_type_if_statement:
+        case Ast_type_if_statement:
             return optimize(std::move(std::unique_ptr<AstIfStmt>(static_cast<AstIfStmt*>(node.release()))));
-        case ast_type_for_loop:
+        case Ast_type_for_loop:
             return optimize(std::move(std::unique_ptr<AstForLoop>(static_cast<AstForLoop*>(node.release()))));
-        case ast_type_while_loop:
+        case Ast_type_while_loop:
             return optimize(std::move(std::unique_ptr<AstWhileLoop>(static_cast<AstWhileLoop*>(node.release()))));
-        case ast_type_try_catch:
+        case Ast_type_try_catch:
             return optimize(std::move(std::unique_ptr<AstTryCatch>(static_cast<AstTryCatch*>(node.release()))));
-        case ast_type_range:
+        case Ast_type_range:
             return optimize(std::move(std::unique_ptr<AstRange>(static_cast<AstRange*>(node.release()))));
         default:
             return nullptr;
@@ -140,13 +140,13 @@ protected:
         node->left = optimize(std::move(node->left));
         node->right = optimize(std::move(node->right));
 
-        if (node->left->type == ast_type_integer && node->right->type == ast_type_integer)
+        if (node->left->type == Ast_type_integer && node->right->type == Ast_type_integer)
             return std::move(optimize_bin_op<AstInteger, AstInteger, AstInteger>(node->left.get(), node->right.get(), node->op));
-        else if (node->left->type == ast_type_integer && node->right->type == ast_type_float)
+        else if (node->left->type == Ast_type_integer && node->right->type == Ast_type_float)
             return std::move(optimize_bin_op<AstFloat, AstInteger, AstFloat>(node->left.get(), node->right.get(), node->op));
-        else if (node->left->type == ast_type_float && node->right->type == ast_type_integer)
+        else if (node->left->type == Ast_type_float && node->right->type == Ast_type_integer)
             return std::move(optimize_bin_op<AstFloat, AstFloat, AstInteger>(node->left.get(), node->right.get(), node->op));
-        else if (node->left->type == ast_type_float && node->right->type == ast_type_float)
+        else if (node->left->type == Ast_type_float && node->right->type == Ast_type_float)
             return std::move(optimize_bin_op<AstFloat, AstFloat, AstFloat>(node->left.get(), node->right.get(), node->op));
         else
             return std::move(node);
@@ -156,9 +156,9 @@ protected:
     {
         node->child = optimize(std::move(node->child));
 
-        if (node->child->type == ast_type_integer)
+        if (node->child->type == Ast_type_integer)
             return std::move(optimize_un_op<AstInteger, AstInteger>(node->child.get(), node->op));
-        else if (node->child->type == ast_type_float)
+        else if (node->child->type == Ast_type_float)
             return std::move(optimize_un_op<AstFloat, AstFloat>(node->child.get(), node->op));
         else
             return std::move(node);
